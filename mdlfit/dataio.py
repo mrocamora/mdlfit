@@ -14,15 +14,17 @@ Reading and writing annotations
 
 """
 
+import os
 import glob
 import warnings
+import pickle
 import numpy as np
 import music21
 
-__all__ = ['load_dataset']
+__all__ = ['encode_dataset', 'load_encoded_dataset', 'save_encoded_dataset']
 
 
-def load_dataset(dataset_folder, file_ext='xml', signature='4/4', beats_measure=8):
+def encode_dataset(dataset_folder, file_ext='xml', signature='4/4', beat_subdivisions=2):
     """Load dataset from folder with music xml files.
 
     Parameters
@@ -90,34 +92,44 @@ def load_dataset(dataset_folder, file_ext='xml', signature='4/4', beats_measure=
     # number of files
     num_files = len(filenames)
 
-    # dataset as a list of pieces, each piece is a list of
-    # measures each measure is a numpy array of onsets
+    # dataset as a list of dictionaries, each one corresponds to a piece
+    # each dictionary has attributes 'name' (str) and 'measures' (list of numpy arrays of onsets)
     dataset = num_files*[[]]
 
     # for each file in the dataset
     for ind_file, filename in enumerate(filenames):
-        print('ind_file: %d, %s', (ind_file, filename))
+        print('ind_file: %d, %s' % (ind_file, filename))
         # open file using music21 parser (and get only first part)
         piece = music21.converter.parse(filename).parts[0]
-        # get the time signatures
-        time_signature = piece.getTimeSignatures()[0]
 
         # check time signature
-        if time_signature.ratioString == signature:
+        if signature == single_time_signature(piece):
 
             # encode piece
-            piece_measures = encode_piece(piece, signature=signature, beats_measure=beats_measure)
+            piece_measures = encode_piece(piece, signature, beat_subdivisions)
+
+            # get the name of the piece from filename
+            name = os.path.splitext(os.path.basename(filename))[0]
+
+            # create dictionary corresponding to current piece
+            dict_piece = {"name": name, "measures": piece_measures}
 
             # save piece in dataset
-            dataset[ind_file] = piece_measures
+            dataset[ind_file] = dict_piece
 
+        elif single_time_signature(piece) is None:
+            warnings.warn("Piece with several Time Signatures.", RuntimeWarning)
         else:
             warnings.warn("Piece with wrong TimeSignature.", RuntimeWarning)
+
+    # remove empty elements in list
+    dataset_filtered = list(filter(None, dataset))
+    dataset = dataset_filtered
 
     return dataset
 
 
-def encode_piece(piece, signature='4/4', beats_measure=8):
+def encode_piece(piece, signature='4/4', beat_subdivisions=2):
     """Encode the onsets in the given piece as a list, each element being a sequence of 0s and 1s
     corresponding to each measure.
 
@@ -127,8 +139,8 @@ def encode_piece(piece, signature='4/4', beats_measure=8):
         piece to be encoded
     signature : str
         string that defines the time signature
-    beats_meatsure : int
-        number of beats per measure
+    beat_subdivisions : int
+        number of subdivisions per beat
 
     Returns
     -------
@@ -142,8 +154,8 @@ def encode_piece(piece, signature='4/4', beats_measure=8):
 
     # convert time signature into numerator denominator
     ts_num = int(signature.split('/')[0])
-    # ratio used to convert to our beats per measure
-    beats_ratio = beats_measure / ts_num
+    # beats subdivisions per measure
+    beats_measure = ts_num * beat_subdivisions
 
     # get the measures of the piece
     measures = piece.getElementsByClass('Measure')
@@ -163,7 +175,8 @@ def encode_piece(piece, signature='4/4', beats_measure=8):
             # if not chord
             if not note.isChord:
                 # compute onset position in grid (Note: this could alse be obtained with offset)
-                ons_pos = (note.beat-1) * beats_ratio
+                ons_pos = float((note.beat-1) * beat_subdivisions)
+                # check if onset is integer
                 if ons_pos.is_integer():
                     onsets_pos.append(int(ons_pos))
                 else:
@@ -177,131 +190,67 @@ def encode_piece(piece, signature='4/4', beats_measure=8):
 
     return piece_measures
 
-#def load_dataset_old(dataset_folder, file_ext='xml', signature='4/4', beats_measure=8):
-#    """Load dataset from folder with music xml files.
-#
-#    Parameters
-#    ----------
-#    labels_file : str
-#        name (including path) of the input file
-#    delimiter : str
-#        string used as delimiter in the input file
-#    times_col : int
-#        column index of the time data
-#    labels_col : int
-#        column index of the label data
-#
-#    Returns
-#    -------
-#    beat_times : np.ndarray
-#        time instants of the beats
-#    beat_labels : list
-#        labels at the beats (e.g. 1.1, 1.2, etc)
-#
-#    Examples
-#    --------
-#
-#    Load an included example file from the candombe dataset.
-#    http://www.eumus.edu.uy/candombe/datasets/ISMIR2015/
-#
-#    >>> annotations_file = carat.util.example_beats_file(num_file=1)
-#    >>> beats, beat_labs = annotations.load_beats(annotations_file)
-#    >>> beats[0]
-#    0.548571428
-#    >>> beat_labs[0]
-#    '1.1'
-#
-#    Load an included example file from the samba dataset.
-#    http://www.smt.ufrj.br/~starel/datasets/brid.html
-#
-#    >>> annotations_file = carat.util.example_beats_file(num_file=2)
-#    >>> beats, beat_labs = annotations.load_beats(annotations_file, delimiter=' ')
-#    >>> beats
-#    array([ 2.088,  2.559,  3.012,   3.48,  3.933,   4.41,  4.867,   5.32,
-#            5.771,  6.229,   6.69,  7.167,  7.633,  8.092,  8.545,   9.01,
-#             9.48,  9.943, 10.404, 10.865, 11.322, 11.79 , 12.251, 12.714,
-#           13.167, 13.624, 14.094, 14.559, 15.014, 15.473, 15.931,   16.4,
-#           16.865, 17.331, 17.788, 18.249, 18.706, 19.167, 19.643, 20.096,
-#           20.557, 21.018, 21.494, 21.945, 22.408, 22.869, 23.31 , 23.773,
-#           24.235, 24.692, 25.151, 25.608, 26.063, 26.52 ])
-#
-#    >>> beat_labs
-#    ['1', '2', '1', '2', '1', '2', '1', '2', '1', '2', '1', '2', '1', '2',
-#     '1', '2', '1', '2', '1', '2', '1', '2', '1', '2', '1', '2', '1', '2',
-#     '1', '2', '1', '2', '1', '2', '1', '2', '1', '2', '1', '2', '1', '2',
-#     '1', '2', '1', '2', '1', '2', '1', '2', '1', '2', '1', '2']
-#
-#
-#    Notes
-#    -----
-#    It is assumed that the beat annotations are provided as a text file (csv).
-#    Apart from the time data (mandatory) a label can be given for each beat (optional).
-#    The time data is assumed to be given in seconds.
-#    The labels may indicate the beat number within the rhythm cycle (e.g. 1.1, 1.2, or 1, 2).
-#    """
-#
-#    # files in folder
-#    filenames = glob.glob(dataset_folder + "*." + file_ext)
-#    # number of files
-#    num_files = len(filenames)
-#
-#    # convert time signature into numerator denominator
-#    ts_num = int(signature.split('/')[0])
-#    ts_den = int(signature.split('/')[1])
-#    # ratio used to convert to our beats per measure
-#    beats_ratio = beats_measure / ts_num
-#
-#    # dataset as a list of pieces
-#    # each piece is a list of measures
-#    # each measure is a numpy array of onsets
-#    dataset = num_files*[[]]
-#
-#    # for each file in the dataset
-#    for ind_file, filename in enumerate(filenames):
-#        print('ind_file: %d, %s', (ind_file, filename))
-#        # open file using music21 parser (and get only first part)
-#        piece = music21.converter.parse(filename).parts[0]
-#        # get the measures of the piece
-#        measures = piece.getElementsByClass('Measure')
-#
-#        # number of measures
-#        num_measures = len(measures)
-#        # list of measures in the piece
-#        piece_measures = num_measures*[[]]
-#
-#        # for each measure
-#        for ind_m, m in enumerate(measures):
-#            # check time signature
-#            time_signature = m.getTimeSignatures()[0]
-#            num = time_signature.numerator
-#            den = time_signature.denominator
-#            # if time signature is correct
-#            if (num == ts_num) & (den == ts_den):
-#                # notes in current measure
-#                measure_notes = m.flat.notes
-#                # positions of all onsets
-#                onsets_pos = []
-#                # for each note in measure
-#                for note in measure_notes:
-#                    # if not chord
-#                    if not note.isChord:
-#                        # compute onset position in grid
-#                        # Note: this could alse be obtained with offset
-#                        ons_pos = (note.beat-1) * beats_ratio
-#                        if ons_pos.is_integer():
-#                            onsets_pos.append(int(ons_pos))
-#                        else:
-#                            warnings.warn("Onset position out of grid.", RuntimeWarning)
-#                # encode note positions as 0/1
-#                bin_pos = np.zeros((beats_measure,), dtype=int)
-#                bin_pos[onsets_pos] = 1
-#
-#                # save coded measure in piece
-#                piece_measures[ind_m] = bin_pos
-#            else:
-#                warnings.warn("Measure with wrong TimeSignature.", RuntimeWarning)
-#
-#            # save piece in dataset
-#            dataset[ind_file] = piece_measures
-#
-#    return dataset
+
+def single_time_signature(piece):
+    """Check if piece has a single time signature and return it. Otherwise return None.
+
+    Parameters
+    ----------
+    piece: music21.stream
+        piece to check time signature
+
+    Returns
+    -------
+    time_signature : str
+        string describing the time signature or None if not single time signature in the whole piece
+
+    """
+
+    # get the measures of the piece
+    measures = piece.getElementsByClass('Measure')
+    # current time signature
+    current_time_signature = ""
+    # flag to see if there is a single time signature
+    single_signature = True
+
+    # for each measure
+    for measure in measures:
+        # get time signature of current measure
+        time_signature = measure.getTimeSignatures()[0]
+        # set current time signature for the first time
+        if current_time_signature == "":
+            current_time_signature = time_signature.ratioString
+        # check time signatures are the same
+        if time_signature.ratioString != current_time_signature:
+            single_signature = False
+            break
+
+    if not single_signature:
+        current_time_signature = None
+
+    return current_time_signature
+
+
+
+def load_encoded_dataset(filename):
+    """Load encoded dataset from file using serialization.
+
+    Parameters
+    ----------
+    """
+
+    # load dataset
+    dataset = pickle.load(open(filename, "rb"))
+
+
+    return dataset
+
+
+def save_encoded_dataset(dataset, filename):
+    """Save encoded dataset to a file using serialization.
+
+    Parameters
+    ----------
+    """
+
+    pickle.dump(dataset, open(filename, "wb"))
