@@ -10,7 +10,7 @@ from .version import show_versions
 # And all the carat sub-modules
 #from ._cache import cache
 from . import dataio
-# from . import models
+from . import models
 # from . import display
 
 # Exporting exception classes at the top level
