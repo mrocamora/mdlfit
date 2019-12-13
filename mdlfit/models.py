@@ -138,7 +138,7 @@ class RefinedPosition:
             n += len(piece['measures']) * self.beats_measure
             for k in range(self.beats_measure):
                 #sum onsets in each metrical position for all measures in piece
-                p[k] += sum( [measure[k] == 1 for measure in piece['measures '] ] )
+                p[k] += sum( [measure[k] == 1 for measure in piece['measures'] ] )
 
         #save total number of beat positions (i.e. 0s and 1s)
         self.n = n
