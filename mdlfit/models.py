@@ -37,7 +37,7 @@ class Bernoulli:
 
         # set the precision parameter d
         if d is None:
-            self.d = np.log2(self.n)/2
+            self.d = np.sqrt(self.n)
         else:
             self.d = d
 
@@ -118,7 +118,7 @@ class RefinedPosition:
 
         # set the precision parameter d
         if d is None:
-            self.d = np.log2(self.n)/2
+            self.d = np.sqrt(self.n)
         else:
             self.d = d
 
@@ -130,48 +130,49 @@ class RefinedPosition:
         """Fit model parameters from dataset
         """
 
-
-        p = self.beats_measure*[0]
+        #number of onsets on each metrical position
+        self.onsets = self.beats_measure*[0]
+        n = 0
         for piece in dataset:
             # add total number of 0s and 1s in piece
-            n = 0
             n += len(piece['measures']) * self.beats_measure
             for k in range(self.beats_measure):
                 #sum onsets in each metrical position for all measures in piece
-                p[k] += sum( [measure[k] == 1 for measure in piece['measures'] ] )
+                self.onsets[k] += sum( [measure[k] == 1 for measure in piece['measures'] ] )
 
         #save total number of beat positions (i.e. 0s and 1s)
         self.n = n
+        #save total number of measures
+        self.len_measures = n/self.beats_measure
         #get rate instead of absolute quantity
-        p = [i*self.beats_measure/n for i in p]
-        #save rate
-        self.p = p
+        self.ratios = [i/self.len_measures for i in self.onsets]
+        
+        
 
-###### TESTEAR
     def description_length(self):
         """Compute description length
         """
 
         # dataset description length
-        dataset_dl = - (self.n1 * np.log2(self.p) + (self.n - self.n1) * np.log2(1-self.p))
+        dataset_dl = - ( self.len_measures*sum([x*np.log2(x) + (1-x)*np.log2(1-x) for x in self.ratios ])) 
         # model description length
-        model_dl = 2 * np.log2(self.d)
+        model_dl = (self.beats_measure +1)*np.log2(self.d)
 
         # total description length per measure
-        self.dl = (dataset_dl + model_dl) * (self.beats_measure / self.n)
+        self.dl = (dataset_dl + model_dl)/self.len_measures
 
 
     def show(self):
         """Show model parameters
         """
 
-        print("Bernoulli model. ")
+        print("Refined Position model. ")
         print("Dataset Parameters")
-        print("number of pieces: %d, number of beats per measure: %d" % (self.num_pieces,
-                                                                         self.beats_measure))
+        print("number of pieces: %d, number of beats per measure: %d, number of measures: %d" % (self.num_pieces,
+                                                                         self.beats_measure, self.len_measures))
         print("Model Parameters")
-        print("number of 1s: %d, total number of beats: %d, proportion: %f" % (self.n1, self.n,
-                                                                               self.p))
+        print("Onsets per position: %s, total number of beats: %d, ratios: %s" % (str(self.onsets), self.n,
+                                                                               str(self.ratios)))
         print("Description length")
         print("description length per measure (bits): %f" % self.dl)
 
