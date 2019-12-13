@@ -29,22 +29,20 @@ def encode_dataset(dataset_folder, file_ext='xml', signature='4/4', beat_subdivi
 
     Parameters
     ----------
-    labels_file : str
-        name (including path) of the input file
-    delimiter : str
-        string used as delimiter in the input file
-    times_col : int
-        column index of the time data
-    labels_col : int
-        column index of the label data
+    dataset_folder : str
+        name (including path) of the dataset's folder
+    file_ext : str
+        file extension of the dataset's files
+    signature : str
+        string denoting the time signature to consider. Only pieces with that time signature (exclusively) will be encoded. 
+    beat_subdivisions : int
+        number of (equal) subdivisions of each beat.
 
     Returns
     -------
-    beat_times : np.ndarray
-        time instants of the beats
-    beat_labels : list
-        labels at the beats (e.g. 1.1, 1.2, etc)
-
+    dataset : list
+        list of dictionaries, each one corresponds to a piece
+    
     Examples
     --------
 
@@ -196,7 +194,7 @@ def single_time_signature(piece):
 
     Parameters
     ----------
-    piece: music21.stream
+    piece : music21.stream
         piece to check time signature
 
     Returns
@@ -237,8 +235,16 @@ def load_encoded_dataset(filename):
 
     Parameters
     ----------
-    """
+    filename : str
+        file name of the encoded dataset (as a pkl file)
+    
+    Returns
+    -------
+    dataset : list
+        list of dictionaries, each one corresponds to a piece
+    
 
+    """
     # load dataset
     dataset = pickle.load(open(filename, "rb"))
 
@@ -251,6 +257,12 @@ def save_encoded_dataset(dataset, filename):
 
     Parameters
     ----------
+    dataset : list
+        list of dictionaries, each one corresponds to a piece
+    
+    filename : str
+        path and file name to save the encoded dataset
+    
     """
 
     pickle.dump(dataset, open(filename, "wb"))
