@@ -44,6 +44,18 @@ def metric_levels(signature, beat_subdivisions):
         if beat_subdivisions == 2:
             levels = [4, 1, 2, 1, 3, 1, 2, 1]
 
+        elif beat_subdivisions == 4:
+            levels = [5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1]
+
+        else:
+            warnings.warn("Number of subdivision per beat not implemented yet. ", RuntimeWarning)
+    elif signature == '2/4':
+        if beat_subdivisions == 2:
+            levels = [3,1,2,1]
+
+        elif beat_subdivisions == 4:
+            levels = [4, 1, 2, 1, 3, 1, 2, 1]
+
         else:
             warnings.warn("Number of subdivision per beat not implemented yet. ", RuntimeWarning)
 
@@ -57,6 +69,25 @@ def metric_levels(signature, beat_subdivisions):
 
 class Bernoulli:
     """Class to represent a Bernoulli model
+
+    Attributes
+    ----------
+    num_pieces : int
+        Number of pieces of the dataset
+    beats_measure : int 
+        Number of beat subdivisions per measure
+    d : int, optional
+        Precision parameter
+
+    Methods
+    -------
+    fit(dataset)
+        Fit model parameters from dataset
+    description_length()
+        Compute description length
+    show()
+        Show model parameters
+
 
     """
 
@@ -142,6 +173,28 @@ class Bernoulli:
 ########
 class Position:
     """Class to represent a Position model
+
+
+    Attributes
+    ----------
+    num_pieces : int
+        Number of pieces of the dataset
+    beats_measure : int 
+        Number of beat subdivisions per measure
+    levels : list
+        List containing the maximum metric level at each position
+    d : int, optional
+        Precision parameter
+
+    Methods
+    -------
+    fit(dataset)
+        Fit model parameters from dataset
+    description_length()
+        Compute description length
+    show()
+        Show model parameters
+
 
     """
 
@@ -231,6 +284,26 @@ class Position:
 ########
 class RefinedPosition:
     """Class to represent a Refined Position model
+
+
+    Attributes
+    ----------
+    num_pieces : int
+        Number of pieces of the dataset
+    beats_measure : int 
+        Number of beat subdivisions per measure
+    d : int, optional
+        Precision parameter
+
+    Methods
+    -------
+    fit(dataset)
+        Fit model parameters from dataset
+    description_length()
+        Compute description length
+    show()
+        Show model parameters
+
 
     """
 
