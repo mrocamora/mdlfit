@@ -20,6 +20,33 @@ import numpy as np
 __all__ = ['Bernoulli', 'RefinedPosition']
 
 
+def log2(value):
+    """ Function to compute log2 checking for nan values.
+        A nan value is substituted by 0 and a warning is raised.
+
+    Parameters
+    ----------
+    value : float
+        input value
+
+    Returns
+    -------
+    logval : float
+        returned value
+
+    """
+    # compute log2 value
+    logval = np.log2(value)
+    
+    # check if is nan
+    if np.isinf(logval):
+        logval = 0
+        warnings.warn("Warning: nan value found, substitued by zero. ", RuntimeWarning)
+
+    return logval
+
+
+
 def metric_levels(signature, beat_subdivisions):
     """ Given a time signature and the number of subdivision per beat
         this function returns a list indicating the number of metric
@@ -146,7 +173,7 @@ class Bernoulli:
         """
 
         # dataset description length
-        dataset_dl = - (self.n1 * np.log2(self.p) + (self.n - self.n1) * np.log2(1-self.p))
+        dataset_dl = - (self.n1 * log2(self.p) + (self.n - self.n1) * log2(1-self.p))
         # model description length
         model_dl = 2 * np.log2(self.d)
 
@@ -253,8 +280,8 @@ class Position:
 
         # dataset description length
         dataset_dl = - (self.len_measures *
-                        sum([self.ratios[x-1]*np.log2(self.ratios[x-1]) +
-                             (1-self.ratios[x-1])*np.log2(1-self.ratios[x-1])
+                        sum([self.ratios[x-1]*log2(self.ratios[x-1]) +
+                             (1-self.ratios[x-1])*log2(1-self.ratios[x-1])
                              for x in self.levels]))
 
         # model description length
@@ -274,7 +301,7 @@ class Position:
               % (self.num_pieces, self.beats_measure, self.len_measures))
         print("Metrical levels: %s" % (str(self.levels)))
         print("Model Parameters")
-        print("Onsets per position: %s, total number of beats: %d, ratios: %s"
+        print("Onsets per level: %s, total number of beats: %d, ratios: %s"
               % (str(self.onsets), self.n, str(self.ratios)))
         print("Description length")
         print("description length per measure (bits): %f" % self.dl)
@@ -357,7 +384,7 @@ class RefinedPosition:
 
         # dataset description length
         dataset_dl = - (self.len_measures *
-                        sum([x*np.log2(x) + (1-x)*np.log2(1-x) for x in self.ratios]))
+                        sum([x*log2(x) + (1-x)*log2(1-x) for x in self.ratios]))
         # model description length
         model_dl = (self.beats_measure +1)*np.log2(self.d)
 
@@ -378,3 +405,175 @@ class RefinedPosition:
               % (str(self.onsets), self.n, str(self.ratios)))
         print("Description length")
         print("description length per measure (bits): %f" % self.dl)
+
+
+########
+class Hierarchical:
+    """Class to represent a Hierarchical model
+
+
+    Attributes
+    ----------
+    num_pieces : int
+        Number of pieces of the dataset
+    beats_measure : int 
+        Number of beat subdivisions per measure
+    levels : list
+        List containing the maximum metric level at each position
+    d : int, optional
+        Precision parameter
+
+    Methods
+    -------
+    fit(dataset)
+        Fit model parameters from dataset
+    description_length()
+        Compute description length
+    show()
+        Show model parameters
+
+
+    """
+
+    def __init__(self, dataset, signature, beat_subdivisions, d=None):
+
+        # number of pieces in the dataset
+        self.num_pieces = len(dataset)
+
+        # beats subdivisions per measure
+        self.beats_measure = dataset[0]['measures'][0].shape[0]
+
+        # determine the metric levels
+        self.levels = metric_levels(signature, beat_subdivisions)
+
+        # fit the model using dataset
+        self.fit(dataset)
+
+        # set the precision parameter d
+        if d is None:
+            self.d = np.sqrt(self.n)
+        else:
+            self.d = d
+
+        # compute description length
+        self.description_length()
+
+
+    def fit(self, dataset):
+        """Fit model parameters from dataset
+        """
+
+        # number of onsets of each anchor type
+        self.onsets = {'pre': self.levels[0]*[0],
+                       'pos': self.levels[0]*[0],
+                       'un': self.levels[0]*[0],
+                       'bi': self.levels[0]*[0]}
+
+        # number of instances of each anchor type
+        self.anchors = {'pre': self.levels[0]*[0],
+                       'pos': self.levels[0]*[0],
+                       'un': self.levels[0]*[0],
+                       'bi': self.levels[0]*[0]}
+
+        # save location of previous and next neighbour
+        neighbours = self.beats_measure*[[0, 0]]
+        for ind in range(self.beats_measure):
+            if ind == 0:
+                # first level has no neighbours
+                neighbours[ind] = [-1, -1]
+            elif ind == self.levels.index(self.levels[0]-1):
+                # second level has only one neighbour in the measure (and another in next measure)
+                neighbours[ind] = [0, -1]
+            else:
+                # for the rest find the position of the nearest neighbours
+                ind_dist = np.where(np.array(levels[ind:]) > levels[ind])
+                ind_back = ind - ind_dist[0][0]
+                ind_next = ind + ind_dist[0][0]
+                neighbours[ind] = [ind_back, ind_next]
+
+        n = 0
+        for piece in dataset:
+            # add total number of 0s and 1s in piece
+            n += len(piece['measures']) * self.beats_measure
+            # for each measure in piece
+            for measure in piece['measures']:
+                # for each position in measure
+                for pos in range(self.beats_measure):
+                    # check if there is an onset in pos
+                    is_onset = measure[pos] == 1
+                    # check if there are onsets at the neighbours
+                    ons_neigh = [0, 0]
+                    if measure[neighbours[pos][0]] == 1:
+                        ons_neigh[0] = 1
+                    if measure[neighbours[pos][1]] == 1:
+                        ons_neigh[1] = 1
+                    # check and save the anchor type
+                    # un-anchored location
+                    if ons_neigh == [0, 0]:
+                        self.anchors['un'][levels[pos]-1] += 1
+                        if is_onset:
+                            self.onsets['un'][levels[pos]-1] += 1
+                    # bi-anchored location 
+                    if ons_neigh == [1, 1]:
+                        self.anchors['bi'][levels[pos]-1] += 1
+                        if is_onset:
+                            self.onsets['bi'][levels[pos]-1] += 1
+                    # pre-anchored location
+                    if ons_neigh == [1, 0]:
+                        self.anchors['pre'][levels[pos]-1] += 1
+                        if is_onset:
+                            self.onsets['pre'][levels[pos]-1] += 1
+                    # pos-anchored location
+                    if ons_neigh == [1, 1]:
+                        self.anchors['pos'][levels[pos]-1] += 1
+                        if is_onset:
+                            self.onsets['pos'][levels[pos]-1] += 1
+
+
+
+
+
+        # save total number of beat positions (i.e. 0s and 1s)
+        self.n = n
+        # save total number of measures
+        self.len_measures = n/self.beats_measure
+        # get rate instead of absolute quantity
+        self.ratios = [self.onsets[i]/(self.len_measures * self.levels.count(i+1))
+                       for i in range(len(self.onsets))]
+
+
+
+    def description_length(self):
+        """Compute description length
+        """
+
+        # dataset description length
+        dataset_dl = - (self.len_measures *
+                        sum([self.ratios[x-1]*log2(self.ratios[x-1]) +
+                             (1-self.ratios[x-1])*log2(1-self.ratios[x-1])
+                             for x in self.levels]))
+
+        # model description length
+        model_dl = (len(self.ratios) + 1) * np.log2(self.d)
+
+        # total description length per measure
+        self.dl = (dataset_dl + model_dl) / self.len_measures
+
+
+    def show(self):
+        """Show model parameters
+        """
+
+        print("Position model. ")
+        print("Dataset Parameters")
+        print("number of pieces: %d, number of beats per measure: %d, number of measures: %d"
+              % (self.num_pieces, self.beats_measure, self.len_measures))
+        print("Metrical levels: %s" % (str(self.levels)))
+        print("Model Parameters")
+        print("Onsets per level: %s, total number of beats: %d, ratios: %s"
+              % (str(self.onsets), self.n, str(self.ratios)))
+        print("Description length")
+        print("description length per measure (bits): %f" % self.dl)
+
+
+
