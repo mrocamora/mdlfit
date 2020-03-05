@@ -498,12 +498,17 @@ class Hierarchical:
             # add total number of 0s and 1s in piece
             n += len(piece['measures']) * self.beats_measure
             # for each measure in piece
-            # for ind_m, measure in enumerate(piece['measures']):
-            for ind_m in range(len(piece['measures']) -1):
+            for ind_m in range(len(piece['measures'])):
+                # current measure
                 measure = piece['measures'][ind_m]
-                # extend the measure to include next downbeat
-                next_measure = piece['measures'][ind_m+1]
-                measure = np.append(measure, next_measure[0])
+                # extend the current measure to include next downbeat
+                # check if measure is the last one
+                if ind_m == len(piece['measures']) -1:
+                    # extend with an empty measure
+                    measure = np.append(measure, 0)
+                else:    
+                    next_measure = piece['measures'][ind_m+1]
+                    measure = np.append(measure, next_measure[0])
                 # for each position in measure
                 # first position, no anchor type
                 self.anchors['db'][0] +=1
@@ -536,7 +541,7 @@ class Hierarchical:
                         if is_onset:
                             self.onsets['pre'][self.levels[pos]-1] += 1
                     # pos-anchored location
-                    if ons_neigh == [1, 1]:
+                    if ons_neigh == [0, 1]:
                         self.anchors['pos'][self.levels[pos]-1] += 1
                         if is_onset:
                             self.onsets['pos'][self.levels[pos]-1] += 1
