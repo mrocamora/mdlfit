@@ -416,7 +416,7 @@ class Hierarchical:
     ----------
     num_pieces : int
         Number of pieces of the dataset
-    beats_measure : int 
+    beats_measure : int
         Number of beat subdivisions per measure
     levels : list
         List containing the maximum metric level at each position
@@ -471,9 +471,9 @@ class Hierarchical:
 
         # number of instances of each anchor type
         self.anchors = {'pre': self.levels[0]*[0],
-                       'pos': self.levels[0]*[0],
-                       'un': self.levels[0]*[0],
-                       'bi': self.levels[0]*[0]}
+                        'pos': self.levels[0]*[0],
+                        'un': self.levels[0]*[0],
+                        'bi': self.levels[0]*[0]}
 
         # save location of previous and next neighbour
         neighbours = self.beats_measure*[[0, 0]]
@@ -483,10 +483,10 @@ class Hierarchical:
                 neighbours[ind] = [-1, -1]
             elif ind == self.levels.index(self.levels[0]-1):
                 # second level has only one neighbour in the measure (and another in next measure)
-                neighbours[ind] = [0, -1]
+                neighbours[ind] = [0, self.beats_measure]
             else:
                 # for the rest find the position of the nearest neighbours
-                ind_dist = np.where(np.array(levels[ind:]) > levels[ind])
+                ind_dist = np.where(np.array(self.levels[ind::-1]) > self.levels[ind])
                 ind_back = ind - ind_dist[0][0]
                 ind_next = ind + ind_dist[0][0]
                 neighbours[ind] = [ind_back, ind_next]
@@ -496,9 +496,12 @@ class Hierarchical:
             # add total number of 0s and 1s in piece
             n += len(piece['measures']) * self.beats_measure
             # for each measure in piece
-            for measure in piece['measures']:
+            for ind_m, measure in enumerate(piece['measures']):
+                # extend the measure to include next downbeat
+                next_measure = piece['measures'][ind_m+1]
+                measure.append(next_measure[0])
                 # for each position in measure
-                for pos in range(self.beats_measure):
+                for pos in range(1, self.beats_measure):
                     # check if there is an onset in pos
                     is_onset = measure[pos] == 1
                     # check if there are onsets at the neighbours
@@ -510,27 +513,24 @@ class Hierarchical:
                     # check and save the anchor type
                     # un-anchored location
                     if ons_neigh == [0, 0]:
-                        self.anchors['un'][levels[pos]-1] += 1
+                        self.anchors['un'][self.levels[pos]-1] += 1
                         if is_onset:
-                            self.onsets['un'][levels[pos]-1] += 1
-                    # bi-anchored location 
+                            self.onsets['un'][self.levels[pos]-1] += 1
+                    # bi-anchored location
                     if ons_neigh == [1, 1]:
-                        self.anchors['bi'][levels[pos]-1] += 1
+                        self.anchors['bi'][self.levels[pos]-1] += 1
                         if is_onset:
-                            self.onsets['bi'][levels[pos]-1] += 1
+                            self.onsets['bi'][self.levels[pos]-1] += 1
                     # pre-anchored location
                     if ons_neigh == [1, 0]:
-                        self.anchors['pre'][levels[pos]-1] += 1
+                        self.anchors['pre'][self.levels[pos]-1] += 1
                         if is_onset:
-                            self.onsets['pre'][levels[pos]-1] += 1
+                            self.onsets['pre'][self.levels[pos]-1] += 1
                     # pos-anchored location
                     if ons_neigh == [1, 1]:
-                        self.anchors['pos'][levels[pos]-1] += 1
+                        self.anchors['pos'][self.levels[pos]-1] += 1
                         if is_onset:
-                            self.onsets['pos'][levels[pos]-1] += 1
-
-
-
+                            self.onsets['pos'][self.levels[pos]-1] += 1
 
 
         # save total number of beat positions (i.e. 0s and 1s)
