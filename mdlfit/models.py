@@ -463,17 +463,19 @@ class Hierarchical:
         """Fit model parameters from dataset
         """
 
-        # number of onsets of each anchor type
-        self.onsets = {'pre': self.levels[0]*[0],
-                       'pos': self.levels[0]*[0],
-                       'un': self.levels[0]*[0],
-                       'bi': self.levels[0]*[0]}
+        # number of onsets of each anchor type, and downbeat
+        self.onsets = {'pre': (self.levels[0] -1)*[0],
+                       'pos': (self.levels[0] -1)*[0],
+                       'un': (self.levels[0] -1)*[0],
+                       'bi': (self.levels[0] -1)*[0],
+                       'db': [0]}
 
-        # number of instances of each anchor type
-        self.anchors = {'pre': self.levels[0]*[0],
-                        'pos': self.levels[0]*[0],
-                        'un': self.levels[0]*[0],
-                        'bi': self.levels[0]*[0]}
+        # number of instances of each anchor type, and downbeat
+        self.anchors = {'pre': (self.levels[0] -1)*[0],
+                        'pos': (self.levels[0] -1)*[0],
+                        'un': (self.levels[0] -1)*[0],
+                        'bi': (self.levels[0] -1)*[0],
+                        'db': [0]}
 
         # save location of previous and next neighbour
         neighbours = self.beats_measure*[[0, 0]]
@@ -496,11 +498,18 @@ class Hierarchical:
             # add total number of 0s and 1s in piece
             n += len(piece['measures']) * self.beats_measure
             # for each measure in piece
-            for ind_m, measure in enumerate(piece['measures']):
+            # for ind_m, measure in enumerate(piece['measures']):
+            for ind_m in range(len(piece['measures']) -1):
+                measure = piece['measures'][ind_m]
                 # extend the measure to include next downbeat
                 next_measure = piece['measures'][ind_m+1]
-                measure.append(next_measure[0])
+                measure = np.append(measure, next_measure[0])
                 # for each position in measure
+                # first position, no anchor type
+                self.anchors['db'][0] +=1
+                is_onset = measure[0] == 1
+                if is_onset:
+                    self.onsets['db'][0] += 1
                 for pos in range(1, self.beats_measure):
                     # check if there is an onset in pos
                     is_onset = measure[pos] == 1
@@ -537,24 +546,56 @@ class Hierarchical:
         self.n = n
         # save total number of measures
         self.len_measures = n/self.beats_measure
-        # get rate instead of absolute quantity
-        self.ratios = [self.onsets[i]/(self.len_measures * self.levels.count(i+1))
-                       for i in range(len(self.onsets))]
+        # get rates instead of absolute quantity
+        # inicialization
+        self.ratios = {'pre': (self.levels[0] -1)*[0],
+                       'pos': (self.levels[0] -1)*[0],
+                       'un': (self.levels[0] -1)*[0],
+                       'bi': (self.levels[0] -1)*[0],
+                       'db': [0]}
+        # get rates for lower levels
+        for lev in range(self.levels[0] -1):
+            # check if number of anchors is not zero for each anchor type
+            # pre-anchored location
+            if self.anchors['pre'][lev] != 0:
+                #calculate ratio
+                self.ratios['pre'][lev] = self.onsets['pre'][lev]/self.anchors['pre'][lev]
+            # post-anchored location
+            if self.anchors['pos'][lev] != 0:
+                #calculate ratio
+                self.ratios['pos'][lev] = self.onsets['pos'][lev]/self.anchors['pos'][lev]
+            # un-anchored location
+            if self.anchors['un'][lev] != 0:
+                #calculate ratio
+                self.ratios['un'][lev] = self.onsets['un'][lev]/self.anchors['un'][lev]
+            # bi-anchored location
+            if self.anchors['bi'][lev] != 0:
+                #calculate ratio
+                self.ratios['bi'][lev] = self.onsets['bi'][lev]/self.anchors['bi'][lev]
+        # get rates for highest level
+        # check if number of anchors is not zero
+        if self.anchors['db'][0] != 0: 
+            self.ratios['db'][0] = self.onsets['db'][0]/self.anchors['db'][0]
+        #self.ratios = [self.onsets[i]/(self.len_measures * self.levels.count(i+1))
+        #               for i in range(len(self.onsets))]
 
 
 
     def description_length(self):
         """Compute description length
         """
-
+        # inicialization
+        dataset_dl = 0
+        # number of model parameters
+        num_el = 0
         # dataset description length
-        dataset_dl = - (self.len_measures *
-                        sum([self.ratios[x-1]*log2(self.ratios[x-1]) +
-                             (1-self.ratios[x-1])*log2(1-self.ratios[x-1])
-                             for x in self.levels]))
-
+        for key in self.ratios:
+            for ind, e in enumerate(self.ratios[key]):
+                num_el += 1
+                dataset_dl += - self.anchors[key][ind] * (e * log2(e)  + (1-e) * log2(1-e))
+        
         # model description length
-        model_dl = (len(self.ratios) + 1) * np.log2(self.d)
+        model_dl = (num_el + 1) * np.log2(self.d)
 
         # total description length per measure
         self.dl = (dataset_dl + model_dl) / self.len_measures
@@ -564,16 +605,16 @@ class Hierarchical:
         """Show model parameters
         """
 
-        print("Position model. ")
+        print("Hierarchical model. ")
         print("Dataset Parameters")
         print("number of pieces: %d, number of beats per measure: %d, number of measures: %d"
               % (self.num_pieces, self.beats_measure, self.len_measures))
         print("Metrical levels: %s" % (str(self.levels)))
         print("Model Parameters")
-        print("Onsets per level: %s, total number of beats: %d, ratios: %s"
-              % (str(self.onsets), self.n, str(self.ratios)))
+        print("Locations per anchor type and level: %s, Onsets per anchor type and level: %s, Ratios per anchor type and level: %s"
+              % (str(self.anchors), str(self.onsets), str(self.ratios)))
         print("Description length")
-        print("description length per measure (bits): %f" % self.dl)
+        print("Description length per measure (bits): %f" % self.dl)
 
 
 
