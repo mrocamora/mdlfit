@@ -23,7 +23,8 @@ model1 = mf.models.Bernoulli(dataset)
 model2 = mf.models.Position(dataset, signature, beat_subdivisions)
 # fit Refined Postion model
 model3 = mf.models.RefinedPosition(dataset)
-
+# fit Hierarchical model
+model4 = mf.models.Hierarchical(dataset, signature, beat_subdivisions)
 
 print("="*10)
 model1.show()
@@ -31,4 +32,6 @@ print("="*10)
 model2.show()
 print("="*10)
 model3.show()
+print("="*10)
+model4.show()
 print("="*10)
