@@ -25,6 +25,10 @@ model2 = mf.models.Position(dataset, signature, beat_subdivisions)
 model3 = mf.models.RefinedPosition(dataset)
 # fit Hierarchical model
 model4 = mf.models.Hierarchical(dataset, signature, beat_subdivisions)
+# fit Hierarchical model
+model5 = mf.models.RefinedHierarchical(dataset, signature, beat_subdivisions)
+
+
 
 print("="*10)
 model1.show()
@@ -34,4 +38,6 @@ print("="*10)
 model3.show()
 print("="*10)
 model4.show()
+print("="*10)
+model5.show()
 print("="*10)
