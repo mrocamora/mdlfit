@@ -37,7 +37,7 @@ def log2(value):
     """
     # compute log2 value
     logval = np.log2(value)
-    
+
     # check if is nan
     if np.isinf(logval):
         logval = 0
@@ -78,7 +78,7 @@ def metric_levels(signature, beat_subdivisions):
             warnings.warn("Number of subdivision per beat not implemented yet. ", RuntimeWarning)
     elif signature == '2/4':
         if beat_subdivisions == 2:
-            levels = [3,1,2,1]
+            levels = [3, 1, 2, 1]
 
         elif beat_subdivisions == 4:
             levels = [4, 1, 2, 1, 3, 1, 2, 1]
@@ -92,6 +92,97 @@ def metric_levels(signature, beat_subdivisions):
 
     return levels
 
+def find_nearest_values(array, value):
+    """Find indexes of the two nearest values of an array to a given value
+
+    Parameters
+    ----------
+    array (numpy.ndarray)  : array
+    value (float)          : value
+
+    Returns
+    -------
+    idx1 (int) : index of nearest value in the array
+    idx2 (int) : index of second nearest value in the array
+    """
+
+    # index of nearest value in the array
+    idx1 = (np.abs(array-value)).argmin()
+    # check if value is bigger or smaller than nearest value
+    if array[idx1] >= value:
+        idx2 = idx1 - 1
+    else:
+        idx2 = idx1 + 1
+
+    return idx1, idx2
+
+
+def compute_description_length(val, n, n1):
+    """Compute description length for a given parameter
+
+    Parameters
+    ----------
+    val : float
+        input value
+    n : int
+        total number of elements
+    n1 : int
+        total number of ones
+
+    Returns
+    -------
+    dl_val (float) : description length value
+    """
+
+    if val in (0, 1):
+        dl_val = np.inf
+    else:
+        dl_val = -(n1 * log2(val) + (n-n1) * log2(1-val))
+
+    return dl_val
+
+
+def optimal_value(d, val, n, n1):
+    """Compute the optimal discrete value of the parameters given the precision
+
+    Parameters
+    ----------
+    d : float
+        precision value
+    val : float
+        input value
+    n : int
+        total number of elements
+    n1 : int
+        total number of ones
+
+    Returns
+    -------
+    d_val : float
+        returns discrete optimal value
+
+    """
+
+    if val in (0, 1):
+        d_val = val
+    else:
+        # grid of parameter values
+        grid = np.arange(0, 1, 1/d)
+        # find the indexes of the nearest values in the grid
+        idx1, idx2 = find_nearest_values(grid, val)
+        # nearest values in the grid
+        val1 = grid[idx1]
+        val2 = grid[idx2]
+        # description length values
+        dl_val1 = compute_description_length(val1, n, n1)
+        dl_val2 = compute_description_length(val2, n, n1)
+        # check which parameter values gives a smaller description length
+        if dl_val1 < dl_val2:
+            d_val = val1
+        else:
+            d_val = val2
+
+    return d_val
 
 
 class Bernoulli:
@@ -101,7 +192,7 @@ class Bernoulli:
     ----------
     num_pieces : int
         Number of pieces of the dataset
-    beats_measure : int 
+    beats_measure : int
         Number of beat subdivisions per measure
     d : int, optional
         Precision parameter
@@ -132,8 +223,10 @@ class Bernoulli:
         # set the precision parameter d
         if d is None:
             self.d = np.sqrt(self.n)
+            self.default_precision = True
         else:
             self.d = d
+            self.default_precision = False
 
         # compute description length
         self.description_length()
@@ -172,6 +265,12 @@ class Bernoulli:
         """Compute description length
         """
 
+        # if not default precision then compute the optimal
+        # discrete value of the parameters given the precision
+        if not self.default_precision:
+            self.p = optimal_value(self.d, self.p, self.n, self.n1)
+
+
         # dataset description length
         dataset_dl = - (self.n1 * log2(self.p) + (self.n - self.n1) * log2(1-self.p))
         # model description length
@@ -206,7 +305,7 @@ class Position:
     ----------
     num_pieces : int
         Number of pieces of the dataset
-    beats_measure : int 
+    beats_measure : int
         Number of beat subdivisions per measure
     levels : list
         List containing the maximum metric level at each position
@@ -242,8 +341,10 @@ class Position:
         # set the precision parameter d
         if d is None:
             self.d = np.sqrt(self.n)
+            self.default_precision = True
         else:
             self.d = d
+            self.default_precision = False
 
         # compute description length
         self.description_length()
@@ -277,6 +378,15 @@ class Position:
     def description_length(self):
         """Compute description length
         """
+
+        # if not default precision then compute the optimal
+        # discrete value of the parameters given the precision
+        if not self.default_precision:
+            # for each parameter
+            for ind in range(len(self.ratios)):
+                self.ratios[ind] = optimal_value(self.d, self.ratios[ind],
+                                                 self.len_measures * self.levels.count(ind+1),
+                                                 self.onsets[ind])
 
         # dataset description length
         dataset_dl = - (self.len_measures *
@@ -317,7 +427,7 @@ class RefinedPosition:
     ----------
     num_pieces : int
         Number of pieces of the dataset
-    beats_measure : int 
+    beats_measure : int
         Number of beat subdivisions per measure
     d : int, optional
         Precision parameter
@@ -348,8 +458,10 @@ class RefinedPosition:
         # set the precision parameter d
         if d is None:
             self.d = np.sqrt(self.n)
+            self.default_precision = True
         else:
             self.d = d
+            self.default_precision = False
 
         # compute description length
         self.description_length()
@@ -381,6 +493,15 @@ class RefinedPosition:
     def description_length(self):
         """Compute description length
         """
+
+        # if not default precision then compute the optimal
+        # discrete value of the parameters given the precision
+        if not self.default_precision:
+            # for each parameter
+            for ind in range(len(self.ratios)):
+                self.ratios[ind] = optimal_value(self.d, self.ratios[ind],
+                                                 self.len_measures,
+                                                 self.onsets[ind])
 
         # dataset description length
         dataset_dl = - (self.len_measures *
@@ -452,8 +573,10 @@ class Hierarchical:
         # set the precision parameter d
         if d is None:
             self.d = np.sqrt(self.n)
+            self.default_precision = True
         else:
             self.d = d
+            self.default_precision = False
 
         # compute description length
         self.description_length()
@@ -506,12 +629,12 @@ class Hierarchical:
                 if ind_m == len(piece['measures']) -1:
                     # extend with an empty measure
                     measure = np.append(measure, 0)
-                else:    
+                else:
                     next_measure = piece['measures'][ind_m+1]
                     measure = np.append(measure, next_measure[0])
                 # for each position in measure
                 # first position, no anchor type
-                self.anchors['db'][0] +=1
+                self.anchors['db'][0] += 1
                 is_onset = measure[0] == 1
                 if is_onset:
                     self.onsets['db'][0] += 1
@@ -579,7 +702,7 @@ class Hierarchical:
                 self.ratios['bi'][lev] = self.onsets['bi'][lev]/self.anchors['bi'][lev]
         # get rates for highest level
         # check if number of anchors is not zero
-        if self.anchors['db'][0] != 0: 
+        if self.anchors['db'][0] != 0:
             self.ratios['db'][0] = self.onsets['db'][0]/self.anchors['db'][0]
         #self.ratios = [self.onsets[i]/(self.len_measures * self.levels.count(i+1))
         #               for i in range(len(self.onsets))]
@@ -589,7 +712,19 @@ class Hierarchical:
     def description_length(self):
         """Compute description length
         """
-        # inicialization
+
+        # if not default precision then compute the optimal
+        # discrete value of the parameters given the precision
+        if not self.default_precision:
+            # for each parameter
+            for key in self.ratios:
+                for ind, e in enumerate(self.ratios[key]):
+                    self.ratios[key][ind] = optimal_value(self.d,
+                                                          self.ratios[key][ind],
+                                                          self.anchors[key][ind],
+                                                          self.onsets[key][ind])
+
+        # initialization
         dataset_dl = 0
         # number of model parameters
         num_el = 0
@@ -598,7 +733,7 @@ class Hierarchical:
             for ind, e in enumerate(self.ratios[key]):
                 num_el += 1
                 dataset_dl += - self.anchors[key][ind] * (e * log2(e)  + (1-e) * log2(1-e))
-        
+
         # model description length
         model_dl = (num_el + 1) * np.log2(self.d)
 
@@ -668,8 +803,10 @@ class RefinedHierarchical:
         # set the precision parameter d
         if d is None:
             self.d = np.sqrt(self.n)
+            self.default_precision = True
         else:
             self.d = d
+            self.default_precision = False
 
         # compute description length
         self.description_length()
@@ -722,12 +859,12 @@ class RefinedHierarchical:
                 if ind_m == len(piece['measures']) -1:
                     # extend with an empty measure
                     measure = np.append(measure, 0)
-                else:    
+                else:
                     next_measure = piece['measures'][ind_m+1]
                     measure = np.append(measure, next_measure[0])
                 # for each position in measure
                 # first position, no anchor type
-                self.anchors['db'][0] +=1
+                self.anchors['db'][0] += 1
                 is_onset = measure[0] == 1
                 if is_onset:
                     self.onsets['db'][0] += 1
@@ -795,7 +932,7 @@ class RefinedHierarchical:
                 self.ratios['bi'][pos - 1] = self.onsets['bi'][pos - 1]/self.anchors['bi'][pos - 1]
         # get rates for highest level
         # check if number of anchors is not zero
-        if self.anchors['db'][0] != 0: 
+        if self.anchors['db'][0] != 0:
             self.ratios['db'][0] = self.onsets['db'][0]/self.anchors['db'][0]
         #self.ratios = [self.onsets[i]/(self.len_measures * self.levels.count(i+1))
         #               for i in range(len(self.onsets))]
@@ -805,7 +942,19 @@ class RefinedHierarchical:
     def description_length(self):
         """Compute description length
         """
-        # inicialization
+
+        # if not default precision then compute the optimal
+        # discrete value of the parameters given the precision
+        if not self.default_precision:
+            # for each parameter
+            for key in self.ratios:
+                for ind, e in enumerate(self.ratios[key]):
+                    self.ratios[key][ind] = optimal_value(self.d,
+                                                          self.ratios[key][ind],
+                                                          self.anchors[key][ind],
+                                                          self.onsets[key][ind])
+
+        # initialization
         dataset_dl = 0
         # number of model parameters
         num_el = 0
@@ -814,7 +963,7 @@ class RefinedHierarchical:
             for ind, e in enumerate(self.ratios[key]):
                 num_el += 1
                 dataset_dl += - self.anchors[key][ind] * (e * log2(e)  + (1-e) * log2(1-e))
-        
+
         # model description length
         model_dl = (num_el + 1) * np.log2(self.d)
 
@@ -836,6 +985,3 @@ class RefinedHierarchical:
               % (str(self.anchors), str(self.onsets), str(self.ratios)))
         print("Description length")
         print("Description length per measure (bits): %f" % self.dl)
-
-
-
