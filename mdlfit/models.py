@@ -285,12 +285,19 @@ class Bernoulli:
         """
 
         print("Bernoulli model. ")
+        print("-"*16)
         print("Dataset Parameters")
         print("Number of pieces: %d, number of beats per measure: %d" % (self.num_pieces,
                                                                          self.beats_measure))
         print("Model Parameters")
         print("Number of 1s: %d, total number of beats: %d, proportion: %f" % (self.n1, self.n,
                                                                                self.p))
+        if self.default_precision == True:
+            #Use default d
+            print("Precision parameter d: %d. (Not indicated by user, default value.)", self.d)
+        else:
+            #User sets d
+            print("Precision parameter d: %d." % self.d)
         print("Description length")
         print("description length per measure (bits): %f" % self.dl)
 
@@ -406,6 +413,7 @@ class Position:
         """
 
         print("Position model. ")
+        print("-"*15)
         print("Dataset Parameters")
         print("Number of pieces: %d, number of beats per measure: %d, number of measures: %d"
               % (self.num_pieces, self.beats_measure, self.len_measures))
@@ -413,6 +421,14 @@ class Position:
         print("Model Parameters")
         print("Onsets per level: %s.\nTotal number of beats: %d.\nRatios: %s"
               % (str(self.onsets), self.n, str(self.ratios)))
+
+        if self.default_precision == True:
+            #Use default d
+            print("Precision parameter d: %d. (Not indicated by user, default value.)", self.d)
+        else:
+            #User sets d
+            print("Precision parameter d: %d." % self.d)
+
         print("Description length")
         print("description length per measure (bits): %f" % self.dl)
 
@@ -518,12 +534,21 @@ class RefinedPosition:
         """
 
         print("Refined Position model. ")
+        print("-"*23)
         print("Dataset Parameters")
         print("Number of pieces: %d, number of beats per measure: %d, number of measures: %d"
               % (self.num_pieces, self.beats_measure, self.len_measures))
         print("Model Parameters")
         print("Onsets per position: %s.\nTotal number of beats: %d.\nRatios: %s"
               % (str(self.onsets), self.n, str(self.ratios)))
+
+        if self.default_precision == True:
+            #Use default d
+            print("Precision parameter d: %d. (Not indicated by user, default value.)", self.d)
+        else:
+            #User sets d
+            print("Precision parameter d: %d." % self.d)
+
         print("Description length")
         print("description length per measure (bits): %f" % self.dl)
 
@@ -746,6 +771,7 @@ class Hierarchical:
         """
 
         print("Hierarchical model. ")
+        print("-"*19)
         print("Dataset Parameters")
         print("Number of pieces: %d, number of beats per measure: %d, number of measures: %d"
               % (self.num_pieces, self.beats_measure, self.len_measures))
@@ -753,6 +779,14 @@ class Hierarchical:
         print("Model Parameters")
         print("Locations per anchor type and level: %s.\nOnsets per anchor type and level: %s.\nRatios per anchor type and level: %s"
               % (str(self.anchors), str(self.onsets), str(self.ratios)))
+
+        if self.default_precision == True:
+            #Use default d
+            print("Precision parameter d: %d. (Not indicated by user, default value.)", self.d)
+        else:
+            #User sets d
+            print("Precision parameter d: %d." % self.d)
+
         print("Description length")
         print("Description length per measure (bits): %f" % self.dl)
 
@@ -976,6 +1010,7 @@ class RefinedHierarchical:
         """
 
         print("Refined Hierarchical model. ")
+        print("-"*27)
         print("Dataset Parameters")
         print("Number of pieces: %d, number of beats per measure: %d, number of measures: %d"
               % (self.num_pieces, self.beats_measure, self.len_measures))
@@ -983,5 +1018,13 @@ class RefinedHierarchical:
         print("Model Parameters")
         print("Locations per anchor type and position: %s.\nOnsets per anchor type and position: %s.\nRatios per anchor type and position: %s"
               % (str(self.anchors), str(self.onsets), str(self.ratios)))
+
+        if self.default_precision == True:
+            #Use default d
+            print("Precision parameter d: %d. (Not indicated by user, default value.)", self.d)
+        else:
+            #User sets d
+            print("Precision parameter d: %d." % self.d)
+
         print("Description length")
         print("Description length per measure (bits): %f" % self.dl)
