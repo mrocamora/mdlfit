@@ -21,7 +21,57 @@ import pickle
 import numpy as np
 import music21
 
-__all__ = ['encode_dataset', 'load_encoded_dataset', 'save_encoded_dataset']
+__all__ = ['encode_dataset', 'load_encoded_dataset', 'save_encoded_dataset', 'encode_dataset21']
+
+def encode_dataset21(dataset_name, signature='4/4', beat_subdivisions=2):
+    """Load dataset from folder with music xml files.
+
+    Parameters
+    ----------
+    dataset_name : str
+        name of the dataset in music21
+    file_ext : str
+        file extension of the dataset's files
+    signature : str
+        string denoting the time signature to consider. Only pieces with that time signature (exclusively) will be encoded.
+    beat_subdivisions : int
+        number of (equal) subdivisions of each beat.
+
+    Returns
+    -------
+    dataset : list
+        list of dictionaries, each one corresponds to a piece
+    """
+
+    # get muic21 corpus from corpus name
+    corpus = music21.corpus.getComposer(dataset_name)
+
+    # save opus to avoid repeating parse 
+    # opus_list = 
+
+    # compute the total number of pieces to initialize list 
+
+    # for each path int the corpus
+    for path in corpus:
+        # convert path to opus
+        opus = music21.converter.parse(path)
+        # check that we get an opus
+        if isinstance(opus, music21.stream.Opus):
+            # for each score in the opus
+            for score in opus:
+                # check that we get an score
+                if isinstance(score, music21.stream.Score):
+                    # for each part in the score
+                    for part in score.parts:
+                        # WARNING: if folksongs are considered then there is only one part (melody) 
+                        print(part)
+                else:
+                    warnings.warn("The Score has not given a Score and is ignored.", RuntimeWarning)
+        else:
+            warnings.warn("The path has not given an Opus and is ignored.", RuntimeWarning)
+
+    return
+
 
 
 def encode_dataset(dataset_folder, file_ext='xml', signature='4/4', beat_subdivisions=2):
