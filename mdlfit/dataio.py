@@ -24,7 +24,7 @@ import music21
 __all__ = ['encode_dataset', 'load_encoded_dataset', 'save_encoded_dataset', 'encode_dataset21']
 
 def encode_dataset21(dataset_name, signature='4/4', beat_subdivisions=2):
-    """Load dataset from folder with music xml files.
+    """Load a dataset provided by music21
 
     Parameters
     ----------
@@ -46,32 +46,93 @@ def encode_dataset21(dataset_name, signature='4/4', beat_subdivisions=2):
     # get muic21 corpus from corpus name
     corpus = music21.corpus.getComposer(dataset_name)
 
-    # save opus to avoid repeating parse 
-    # opus_list = 
+    # total number of parts in dataset
+    num_parts = 0
 
-    # compute the total number of pieces to initialize list 
+    # save opus to avoid repeating parse
+    opus_list = len(corpus)*[[]]
+
+    # in the following we compute the total number of pieces to initialize list
 
     # for each path int the corpus
-    for path in corpus:
+    for ind_path, path in enumerate(corpus):
+        print(path)
         # convert path to opus
         opus = music21.converter.parse(path)
         # check that we get an opus
         if isinstance(opus, music21.stream.Opus):
+            # list to save scores in opus
+            scores_list = len(opus)*[[]]
             # for each score in the opus
-            for score in opus:
+            for ind_score, score in enumerate(opus):
                 # check that we get an score
                 if isinstance(score, music21.stream.Score):
-                    # for each part in the score
-                    for part in score.parts:
-                        # WARNING: if folksongs are considered then there is only one part (melody) 
-                        print(part)
+                    # count the number of parts
+                    # WARNING: if folksongs are considered then we assume
+                    # there is only one part (melody)
+                    num_parts += 1
+                    print(num_parts)
+                    # save score in the scores list
+                    scores_list[ind_score] = score
                 else:
-                    warnings.warn("The Score has not given a Score and is ignored.", RuntimeWarning)
+                    warnings.warn("The Opus has not given a Score and is ignored.", RuntimeWarning)
+            # save list of scores
+            opus_list[ind_path] = scores_list
+        # if not an opus then it can be a score (ex. oneills1850/0731-0731.abc)
+        elif isinstance(opus, music21.stream.Score):
+            scores_list = []
+            scores_list.append(opus)
+            opus_list[ind_path] = scores_list
+            num_parts += 1
+            print(num_parts)
         else:
-            warnings.warn("The path has not given an Opus and is ignored.", RuntimeWarning)
+            warnings.warn("The path has not given an Opus nor a Score and is ignored.",
+                          RuntimeWarning)
+        #input("Press Enter to continue...")
 
-    return
+    # dataset as a list of dictionaries, each one corresponds to a piece/part
+    # each dictionary has attributes 'name' (str) and 'measures' (list of numpy arrays of onsets)
+    dataset = num_parts*[[]]
 
+    # index of the piece
+    ind_piece = 0
+
+    # we now process each part/piece in the dataset
+    for opus in opus_list:
+        # for each score in the opus
+        for score in opus:
+            # we get the part in the score
+            piece = score.parts[0]
+
+            # check time signature
+            if signature == single_time_signature(piece):
+
+                # encode piece
+                piece_measures = encode_piece(piece, signature, beat_subdivisions)
+
+                # get the name of the piece from filename
+                name = dataset_name + '_' + str(ind_piece)
+
+                # create dictionary corresponding to current piece
+                dict_piece = {"name": name, "measures": piece_measures}
+
+                # save piece in dataset
+                dataset[ind_piece] = dict_piece
+
+            elif single_time_signature(piece) is None:
+                warnings.warn("Piece with several Time Signatures.", RuntimeWarning)
+            else:
+                warnings.warn("Piece with wrong TimeSignature.", RuntimeWarning)
+
+            # increment piece index
+            ind_piece += 1
+
+
+    # remove empty elements in list
+    dataset_filtered = list(filter(None, dataset))
+    dataset = dataset_filtered
+
+    return dataset
 
 
 def encode_dataset(dataset_folder, file_ext='xml', signature='4/4', beat_subdivisions=2):
@@ -84,7 +145,8 @@ def encode_dataset(dataset_folder, file_ext='xml', signature='4/4', beat_subdivi
     file_ext : str
         file extension of the dataset's files
     signature : str
-        string denoting the time signature to consider. Only pieces with that time signature (exclusively) will be encoded. 
+        string denoting the time signature to consider.
+        Only pieces with that time signature (exclusively) will be encoded.
     beat_subdivisions : int
         number of (equal) subdivisions of each beat.
 
@@ -92,7 +154,7 @@ def encode_dataset(dataset_folder, file_ext='xml', signature='4/4', beat_subdivi
     -------
     dataset : list
         list of dictionaries, each one corresponds to a piece
-    
+
     Examples
     --------
 
@@ -287,12 +349,12 @@ def load_encoded_dataset(filename):
     ----------
     filename : str
         file name of the encoded dataset (as a pkl file)
-    
+
     Returns
     -------
     dataset : list
         list of dictionaries, each one corresponds to a piece
-    
+
 
     """
     # load dataset
@@ -309,10 +371,10 @@ def save_encoded_dataset(dataset, filename):
     ----------
     dataset : list
         list of dictionaries, each one corresponds to a piece
-    
+
     filename : str
         path and file name to save the encoded dataset
-    
+
     """
 
     pickle.dump(dataset, open(filename, "wb"))
