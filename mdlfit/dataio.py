@@ -71,7 +71,7 @@ def encode_dataset21(dataset_name, signature='4/4', beat_subdivisions=2):
                     # WARNING: if folksongs are considered then we assume
                     # there is only one part (melody)
                     num_parts += 1
-                    print(num_parts)
+                    # print(num_parts)
                     # save score in the scores list
                     scores_list[ind_score] = score
                 else:
@@ -84,7 +84,7 @@ def encode_dataset21(dataset_name, signature='4/4', beat_subdivisions=2):
             scores_list.append(opus)
             opus_list[ind_path] = scores_list
             num_parts += 1
-            print(num_parts)
+            # print(num_parts)
         else:
             warnings.warn("The path has not given an Opus nor a Score and is ignored.",
                           RuntimeWarning)
@@ -114,7 +114,7 @@ def encode_dataset21(dataset_name, signature='4/4', beat_subdivisions=2):
                 name = dataset_name + '_' + str(ind_piece)
 
                 # create dictionary corresponding to current piece
-                dict_piece = {"name": name, "measures": piece_measures}
+                dict_piece = {"name": name, "score": piece, "measures": piece_measures}
 
                 # save piece in dataset
                 dataset[ind_piece] = dict_piece
@@ -132,7 +132,76 @@ def encode_dataset21(dataset_name, signature='4/4', beat_subdivisions=2):
     dataset_filtered = list(filter(None, dataset))
     dataset = dataset_filtered
 
-    return dataset
+    # remove duplicate elements in list
+    dataset_unique = remove_duplicates(dataset)
+    dataset = dataset_unique
+
+    return dataset, dataset_filtered
+
+
+def remove_duplicates(input_dataset):
+    """Remove duplicate elements in a dataset
+
+    Parameters
+    -------
+    input_dataset : list
+        list of dictionaries, each one corresponds to a piece
+
+
+    Returns
+    -------
+    output_dataset : list
+        list of dictionaries, each one corresponds to a piece
+    """
+    # total number of pieces of the input dataset
+    N = len(input_dataset)
+
+    # indexes of the elements to delete
+    del_indexes = []
+
+    # number of measures of each piece
+    num_measures = N*[0]
+
+    # save in advance the number of measures of each piece
+    for ind, piece in enumerate(input_dataset):
+        num_measures[ind] = len(piece["measures"])
+
+    # for each element in input dataset
+    for ind1, piece1 in enumerate(input_dataset):
+        # compare to each other element in the dataset
+        for ind2, piece2 in enumerate(input_dataset):
+            # avoid self comparison and duplicate comparison
+            if ind1 < ind2:
+                # see if measure length is the same
+                if num_measures[ind1] == num_measures[ind2]:
+                    # if same they have the same number of measures
+                    # then compare notes and rests
+                    notes1 = piece1["score"].flat.notesAndRests
+                    notes2 = piece2["score"].flat.notesAndRests
+                    # check if they have the same number of notes and rests
+                    if len(notes1) == len(notes2):
+                        # flag to indicate they are different
+                        are_different = False
+                        ind = 0
+                        # compare not by note untill they are different
+                        while not are_different and ind < len(notes1):
+                            if notes1[ind] != notes2[ind]:
+                                are_different = True
+                            ind += 1
+                        # save index if they are different
+                        if not are_different:
+                            del_indexes.append(ind2)
+
+    # set to None the elements we want to remove
+    for ind in del_indexes:
+        input_dataset[ind] = None
+
+    print(del_indexes)
+
+    # remove empty elements in list
+    output_dataset = list(filter(None, input_dataset))
+
+    return output_dataset
 
 
 def encode_dataset(dataset_folder, file_ext='xml', signature='4/4', beat_subdivisions=2):
@@ -222,7 +291,7 @@ def encode_dataset(dataset_folder, file_ext='xml', signature='4/4', beat_subdivi
             name = os.path.splitext(os.path.basename(filename))[0]
 
             # create dictionary corresponding to current piece
-            dict_piece = {"name": name, "measures": piece_measures}
+            dict_piece = {"name": name, "score": piece, "measures": piece_measures}
 
             # save piece in dataset
             dataset[ind_file] = dict_piece
