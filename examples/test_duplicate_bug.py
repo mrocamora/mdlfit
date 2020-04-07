@@ -266,7 +266,10 @@ for opus in opus_list:
     for score in opus:
         # we get the part in the score
         piece = score.parts[0]
-
+        # check if there is Metadata object in score
+        if len(score.getElementsByClass('Metadata')) > 0:
+            # we get the title of the piece, assuming there is a title
+            title = score.metadata.title
         # check time signature
         if signature == single_time_signature(piece):
 
@@ -277,7 +280,7 @@ for opus in opus_list:
             name = dataset_name + '_' + str(ind_piece)
 
             # create dictionary corresponding to current piece
-            dict_piece = {"name": name, "score": piece, "measures": piece_measures}
+            dict_piece = {"title": title "name": name, "score": piece, "measures": piece_measures}
 
             # save piece in dataset
             dataset[ind_piece] = dict_piece
