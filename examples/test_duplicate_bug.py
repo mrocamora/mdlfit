@@ -48,8 +48,8 @@ def remove_duplicates(input_dataset):
                 if num_measures[ind1] == num_measures[ind2]:
                     # if same they have the same number of measures
                     # then compare notes and rests
-                    notes1 = piece1["score"].flat.notesAndRests
-                    notes2 = piece2["score"].flat.notesAndRests
+                    notes1 = piece1["score"].flat.notes
+                    notes2 = piece2["score"].flat.notes
                     # check if they have the same number of notes and rests
                     if len(notes1) == len(notes2):
                         # flag to indicate they are different
@@ -266,10 +266,14 @@ for opus in opus_list:
     for score in opus:
         # we get the part in the score
         piece = score.parts[0]
-        # check if there is Metadata object in score
-        if len(score.getElementsByClass('Metadata')) > 0:
-            # we get the title of the piece, assuming there is a title
+        # check if there is a title in the metadata
+        if hasattr(score.metadata, 'title'):
             title = score.metadata.title
+        else:
+            title = 'Empty-Title'
+        #if len(score.getElementsByClass('Metadata')) > 0:
+        #    # we get the title of the piece, assuming there is a title
+        #    title = score.metadata.title
         # check time signature
         if signature == single_time_signature(piece):
 
@@ -277,10 +281,10 @@ for opus in opus_list:
             piece_measures = encode_piece(piece, signature, beat_subdivisions)
 
             # get the name of the piece from filename
-            name = dataset_name + '_' + str(ind_piece)
+            name = dataset_name + '_' + str(ind_piece) + '_' + title
 
             # create dictionary corresponding to current piece
-            dict_piece = {"title": title "name": name, "score": piece, "measures": piece_measures}
+            dict_piece = {"name": name, "score": piece, "measures": piece_measures}
 
             # save piece in dataset
             dataset[ind_piece] = dict_piece

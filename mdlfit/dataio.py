@@ -52,11 +52,16 @@ def encode_dataset21(dataset_name, signature='4/4', beat_subdivisions=2):
     # save opus to avoid repeating parse
     opus_list = len(corpus)*[[]]
 
+    # save opus paths
+    opus_paths = len(corpus)*['']
+
     # in the following we compute the total number of pieces to initialize list
 
     # for each path int the corpus
     for ind_path, path in enumerate(corpus):
         print(path)
+        # save opus path
+        opus_paths[ind_path] = path
         # convert path to opus
         opus = music21.converter.parse(path)
         # check that we get an opus
@@ -93,16 +98,24 @@ def encode_dataset21(dataset_name, signature='4/4', beat_subdivisions=2):
     # dataset as a list of dictionaries, each one corresponds to a piece/part
     # each dictionary has attributes 'name' (str) and 'measures' (list of numpy arrays of onsets)
     dataset = num_parts*[[]]
+    # list to save the score of each element in the dataset
+    scores = num_parts*[None]
 
     # index of the piece
     ind_piece = 0
 
     # we now process each part/piece in the dataset
-    for opus in opus_list:
+    for ind_opus, opus in enumerate(opus_list):
         # for each score in the opus
-        for score in opus:
+        for ind_score, score in enumerate(opus):
             # we get the part in the score
             piece = score.parts[0]
+
+            # check if there is a title in the metadata
+            if hasattr(score.metadata, 'title'):
+                title = score.metadata.title
+            else:
+                title = 'Empty-Title'
 
             # check time signature
             if signature == single_time_signature(piece):
@@ -110,14 +123,15 @@ def encode_dataset21(dataset_name, signature='4/4', beat_subdivisions=2):
                 # encode piece
                 piece_measures = encode_piece(piece, signature, beat_subdivisions)
 
-                # get the name of the piece from filename
-                name = dataset_name + '_' + str(ind_piece)
-
                 # create dictionary corresponding to current piece
-                dict_piece = {"name": name, "score": piece, "measures": piece_measures}
+                dict_piece = {"dataset": dataset_name, "ind_piece": ind_piece,
+                              "title": title, "path": opus_paths[ind_opus],
+                              "ind_score": ind_score, "measures": piece_measures}
 
                 # save piece in dataset
                 dataset[ind_piece] = dict_piece
+                # save score of the piece
+                scores[ind_piece] = piece
 
             elif single_time_signature(piece) is None:
                 warnings.warn("Piece with several Time Signatures.", RuntimeWarning)
@@ -130,22 +144,27 @@ def encode_dataset21(dataset_name, signature='4/4', beat_subdivisions=2):
 
     # remove empty elements in list
     dataset_filtered = list(filter(None, dataset))
+    scores_filtered = list(filter(None, scores))
     dataset = dataset_filtered
+    scores = scores_filtered
 
     # remove duplicate elements in list
-    dataset_unique = remove_duplicates(dataset)
+    dataset_unique, scores_unique = remove_duplicates(dataset, scores)
     dataset = dataset_unique
+    scores = scores_unique
 
     return dataset, dataset_filtered
 
 
-def remove_duplicates(input_dataset):
+def remove_duplicates(input_dataset, input_scores):
     """Remove duplicate elements in a dataset
 
     Parameters
     -------
     input_dataset : list
         list of dictionaries, each one corresponds to a piece
+    input_scores : list
+        list of scores of each piece
 
 
     Returns
@@ -155,6 +174,11 @@ def remove_duplicates(input_dataset):
     """
     # total number of pieces of the input dataset
     N = len(input_dataset)
+
+    # copy input list into output list
+    output_dataset = input_dataset[:]
+    # copy input list into output list
+    output_scores = input_scores[:]
 
     # indexes of the elements to delete
     del_indexes = []
@@ -174,18 +198,25 @@ def remove_duplicates(input_dataset):
             if ind1 < ind2:
                 # see if measure length is the same
                 if num_measures[ind1] == num_measures[ind2]:
-                    # if same they have the same number of measures
-                    # then compare notes and rests
-                    notes1 = piece1["score"].flat.notesAndRests
-                    notes2 = piece2["score"].flat.notesAndRests
-                    # check if they have the same number of notes and rests
+                    # if same they have the same number of measures then compare notes
+                    # notes1 = piece1["score"].flat.getElementsByClass('Note')
+                    # notes2 = piece2["score"].flat.getElementsByClass('Note')
+                    notes1 = input_scores[ind1].flat.getElementsByClass('Note')
+                    notes2 = input_scores[ind2].flat.getElementsByClass('Note')
+                    # check if they have the same number of notes
                     if len(notes1) == len(notes2):
+                        print(piece1["title"], ' -- ', piece2["title"])
                         # flag to indicate they are different
                         are_different = False
                         ind = 0
-                        # compare not by note untill they are different
+                        # compare note by note untill they are different
                         while not are_different and ind < len(notes1):
-                            if notes1[ind] != notes2[ind]:
+                            d1 = notes1[ind].duration.quarterLength
+                            d2 = notes2[ind].duration.quarterLength
+                            f1 = notes1[ind].pitch
+                            f2 = notes2[ind].pitch
+                            # if durations or pitches are different
+                            if (d1 != d2) or (f1 != f2):
                                 are_different = True
                             ind += 1
                         # save index if they are different
@@ -194,14 +225,16 @@ def remove_duplicates(input_dataset):
 
     # set to None the elements we want to remove
     for ind in del_indexes:
-        input_dataset[ind] = None
+        output_dataset[ind] = None
+        output_scores[ind] = None
 
     print(del_indexes)
 
     # remove empty elements in list
-    output_dataset = list(filter(None, input_dataset))
+    output_dataset = list(filter(None, output_dataset))
+    output_scores = list(filter(None, output_scores))
 
-    return output_dataset
+    return output_dataset, output_scores
 
 
 def encode_dataset(dataset_folder, file_ext='xml', signature='4/4', beat_subdivisions=2):
