@@ -303,8 +303,17 @@ def encode_dataset(dataset_folder, file_ext='xml', signature='4/4', beat_subdivi
     # for each file in the dataset
     for ind_file, filename in enumerate(filenames):
         print('ind_file: %d, %s' % (ind_file, filename))
-        # open file using music21 parser (and get only first part)
-        piece = music21.converter.parse(filename).parts[0]
+        # open file using music21 parser
+        score = music21.converter.parse(filename)
+
+        # check if there is a title in the metadata
+        if hasattr(score.metadata, 'title'):
+            title = score.metadata.title
+        else:
+            title = 'Empty-Title'
+
+        # get only first part
+        piece = score.parts[0]
 
         # check time signature
         if signature == single_time_signature(piece):
@@ -312,14 +321,9 @@ def encode_dataset(dataset_folder, file_ext='xml', signature='4/4', beat_subdivi
             # encode piece
             piece_measures = encode_piece(piece, signature, beat_subdivisions)
 
-            # get the name of the piece from filename
-            name = os.path.splitext(os.path.basename(filename))[0]
-
-            # create dictionary corresponding to current piece
-            # dict_piece = {"name": name, "score": piece, "measures": piece_measures}
             # create dictionary corresponding to current piece
             dict_piece = {"dataset": dataset_name, "ind_piece": ind_file,
-                          "title": name, "path": filename,
+                          "title": title, "path": filename,
                           "ind_score": 0, "measures": piece_measures}
 
             # save piece in dataset
