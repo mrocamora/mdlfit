@@ -33,7 +33,8 @@ def encode_dataset21(dataset_name, signature='4/4', beat_subdivisions=2):
     file_ext : str
         file extension of the dataset's files
     signature : str
-        string denoting the time signature to consider. Only pieces with that time signature (exclusively) will be encoded.
+        string denoting the time signature to consider.
+        Only pieces with that time signature (exclusively) will be encoded.
     beat_subdivisions : int
         number of (equal) subdivisions of each beat.
 
@@ -76,7 +77,6 @@ def encode_dataset21(dataset_name, signature='4/4', beat_subdivisions=2):
                     # WARNING: if folksongs are considered then we assume
                     # there is only one part (melody)
                     num_parts += 1
-                    # print(num_parts)
                     # save score in the scores list
                     scores_list[ind_score] = score
                 else:
@@ -89,7 +89,6 @@ def encode_dataset21(dataset_name, signature='4/4', beat_subdivisions=2):
             scores_list.append(opus)
             opus_list[ind_path] = scores_list
             num_parts += 1
-            # print(num_parts)
         else:
             warnings.warn("The path has not given an Opus nor a Score and is ignored.",
                           RuntimeWarning)
@@ -145,15 +144,11 @@ def encode_dataset21(dataset_name, signature='4/4', beat_subdivisions=2):
     # remove empty elements in list
     dataset_filtered = list(filter(None, dataset))
     scores_filtered = list(filter(None, scores))
-    dataset = dataset_filtered
-    scores = scores_filtered
 
     # remove duplicate elements in list
-    dataset_unique, scores_unique = remove_duplicates(dataset, scores)
-    dataset = dataset_unique
-    scores = scores_unique
+    dataset, scores = remove_duplicates(dataset_filtered, scores_filtered)
 
-    return dataset, dataset_filtered
+    return dataset
 
 
 def remove_duplicates(input_dataset, input_scores):
@@ -191,21 +186,18 @@ def remove_duplicates(input_dataset, input_scores):
         num_measures[ind] = len(piece["measures"])
 
     # for each element in input dataset
-    for ind1, piece1 in enumerate(input_dataset):
+    for ind1 in range(len(input_dataset)):
         # compare to each other element in the dataset
-        for ind2, piece2 in enumerate(input_dataset):
+        for ind2 in range(len(input_dataset)):
             # avoid self comparison and duplicate comparison
             if ind1 < ind2:
                 # see if measure length is the same
                 if num_measures[ind1] == num_measures[ind2]:
                     # if same they have the same number of measures then compare notes
-                    # notes1 = piece1["score"].flat.getElementsByClass('Note')
-                    # notes2 = piece2["score"].flat.getElementsByClass('Note')
                     notes1 = input_scores[ind1].flat.getElementsByClass('Note')
                     notes2 = input_scores[ind2].flat.getElementsByClass('Note')
                     # check if they have the same number of notes
                     if len(notes1) == len(notes2):
-                        print(piece1["title"], ' -- ', piece2["title"])
                         # flag to indicate they are different
                         are_different = False
                         ind = 0
@@ -227,8 +219,6 @@ def remove_duplicates(input_dataset, input_scores):
     for ind in del_indexes:
         output_dataset[ind] = None
         output_scores[ind] = None
-
-    print(del_indexes)
 
     # remove empty elements in list
     output_dataset = list(filter(None, output_dataset))
@@ -303,6 +293,8 @@ def encode_dataset(dataset_folder, file_ext='xml', signature='4/4', beat_subdivi
     filenames = glob.glob(dataset_folder + "*." + file_ext)
     # number of files
     num_files = len(filenames)
+    # get the dataset name from the last directory of the path
+    dataset_name = os.path.basename(os.path.dirname(dataset_folder))
 
     # dataset as a list of dictionaries, each one corresponds to a piece
     # each dictionary has attributes 'name' (str) and 'measures' (list of numpy arrays of onsets)
@@ -324,7 +316,11 @@ def encode_dataset(dataset_folder, file_ext='xml', signature='4/4', beat_subdivi
             name = os.path.splitext(os.path.basename(filename))[0]
 
             # create dictionary corresponding to current piece
-            dict_piece = {"name": name, "score": piece, "measures": piece_measures}
+            # dict_piece = {"name": name, "score": piece, "measures": piece_measures}
+            # create dictionary corresponding to current piece
+            dict_piece = {"dataset": dataset_name, "ind_piece": ind_file,
+                          "title": name, "path": filename,
+                          "ind_score": 0, "measures": piece_measures}
 
             # save piece in dataset
             dataset[ind_file] = dict_piece
@@ -403,6 +399,46 @@ def encode_piece(piece, signature='4/4', beat_subdivisions=2):
     return piece_measures
 
 
+#def single_time_signature(piece):
+#    """Check if piece has a single time signature and return it. Otherwise return None.
+#
+#    Parameters
+#    ----------
+#    piece : music21.stream
+#        piece to check time signature
+#
+#    Returns
+#    -------
+#    time_signature : str
+#        string describing the time signature or None if not single time signature in the whole piece
+#
+#    """
+#
+#    # get the measures of the piece
+#    measures = piece.getElementsByClass('Measure')
+#    # current time signature
+#    current_time_signature = ""
+#    # flag to see if there is a single time signature
+#    single_signature = True
+#
+#    # for each measure
+#    for measure in measures:
+#        # get time signature of current measure
+#        time_signature = measure.getTimeSignatures()[0]
+#        # set current time signature for the first time
+#        if current_time_signature == "":
+#            current_time_signature = time_signature.ratioString
+#        # check time signatures are the same
+#        if time_signature.ratioString != current_time_signature:
+#            single_signature = False
+#            break
+#
+#    if not single_signature:
+#        current_time_signature = None
+#
+#    return current_time_signature
+
+
 def single_time_signature(piece):
     """Check if piece has a single time signature and return it. Otherwise return None.
 
@@ -418,30 +454,20 @@ def single_time_signature(piece):
 
     """
 
-    # get the measures of the piece
-    measures = piece.getElementsByClass('Measure')
-    # current time signature
-    current_time_signature = ""
-    # flag to see if there is a single time signature
-    single_signature = True
+    # get time signatures in the piece
+    time_signatures = [ts.ratioString for ts in
+                       piece.recurse().getElementsByClass(music21.meter.TimeSignature)]
+    # use a set to remove duplicate time signatures
+    time_signatures = list(set(time_signatures))
 
-    # for each measure
-    for measure in measures:
-        # get time signature of current measure
-        time_signature = measure.getTimeSignatures()[0]
-        # set current time signature for the first time
-        if current_time_signature == "":
-            current_time_signature = time_signature.ratioString
-        # check time signatures are the same
-        if time_signature.ratioString != current_time_signature:
-            single_signature = False
-            break
+    # check if single time signature
+    if len(time_signatures) == 1:
+        time_signature = time_signatures[0]
+    else:
+        # set None if not single time signature
+        time_signature = None
 
-    if not single_signature:
-        current_time_signature = None
-
-    return current_time_signature
-
+    return time_signature
 
 
 def load_encoded_dataset(filename):

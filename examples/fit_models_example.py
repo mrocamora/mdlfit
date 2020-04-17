@@ -8,7 +8,7 @@ Quick encoding dataset
 import mdlfit as mf
 
 # dataset parameters
-dataset_folder = '../data/tango_dataset_short/'
+dataset_folder = '../data/tango_songbook/'
 # dataset signature
 signature = '4/4'
 # subdivision per beat
