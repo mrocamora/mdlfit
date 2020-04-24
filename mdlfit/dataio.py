@@ -21,9 +21,59 @@ import pickle
 import numpy as np
 import music21
 
-__all__ = ['encode_dataset', 'load_encoded_dataset', 'save_encoded_dataset', 'encode_dataset21']
+__all__ = ['encode_dataset', 'load_encoded_dataset', 'save_encoded_dataset']
 
-def encode_dataset21(dataset_name, signature='4/4', beat_subdivisions=2):
+
+def encode_dataset(dataset_string, file_ext='xml', signature='4/4', beat_subdivisions=2):
+    """Load and encode a symbolic music dataset either from a folder with music files (xml) or from
+    the datasets provided by music21. If a valid directory is given as `dataset_string` then the
+    dataset is built from the files in the directory. If not `dataset_string` is not valid
+    directory, then it is assumed that `dataset_string` is a valid dataset name as defined in
+    music21 (e.g. 'airdsAirs', 'oneills1850', 'EssenFolksong').
+
+    Parameters
+    ----------
+    dataset_string : str
+        name (including path) of the dataset's folder or name of the dataset as defined in music21
+    file_ext : str
+        file extension of the dataset's files (only valid when loading dataset from directory)
+    signature : str
+        string denoting the time signature to consider.
+        Only pieces with that time signature (exclusively) will be encoded.
+    beat_subdivisions : int
+        number of (equal) subdivisions of each beat.
+
+    Returns
+    -------
+    dataset : list
+        list of dictionaries, each one corresponds to a piece
+
+    Examples
+    --------
+
+    Load the tango dataset included in the mdlfit package.
+    Load a dataset from the ones included in musi21.
+    """
+
+    # check if dataset_string is a directory
+    if os.path.isdir(dataset_string):
+
+        # encode dataset from folder
+        dataset = encode_dataset_folder(dataset_string,
+                                        file_ext=file_ext,
+                                        signature=signature,
+                                        beat_subdivisions=beat_subdivisions)
+    else:
+        # if not a folder we assume it is a dataset name as in music21
+        dataset = encode_dataset_music21(dataset_string,
+                                         signature=signature,
+                                         beat_subdivisions=beat_subdivisions)
+
+
+    return dataset
+
+
+def encode_dataset_music21(dataset_name, signature='4/4', beat_subdivisions=2):
     """Load a dataset provided by music21
 
     Parameters
@@ -227,7 +277,7 @@ def remove_duplicates(input_dataset, input_scores):
     return output_dataset, output_scores
 
 
-def encode_dataset(dataset_folder, file_ext='xml', signature='4/4', beat_subdivisions=2):
+def encode_dataset_folder(dataset_folder, file_ext='xml', signature='4/4', beat_subdivisions=2):
     """Load dataset from folder with music xml files.
 
     Parameters

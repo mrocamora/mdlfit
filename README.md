@@ -1,8 +1,14 @@
 mdlfit
 =====
-<pre>
- _  _  __ _ _|_
-(_ (_| | (_| |_   computer-aided rhythm analysis toolbox
+<pre> 
+    __  __ _____  _      ______ _____ _______
+   |  \/  |  __ \| |    |  ____|_   _|__   __|
+   | \  / | |  | | |    | |__    | |    | |
+   | |\/| | |  | | |    |  __|   | |    | |
+   | |  | | |__| | |____| |     _| |_   | |
+   |_|  |_|_____/|______|_|    |_____|  |_|
+
+ music encodind using minimum description length
 </pre>
 
 
