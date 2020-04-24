@@ -21,7 +21,6 @@ Defining, fitting and applying models
 import warnings
 import numpy as np
 from . import util
-from . import util.log2 as log2
 
 __all__ = ['Bernoulli', 'Position', 'RefinedPosition', 'Hierarchical', 'RefinedHierarchical']
 
@@ -112,7 +111,7 @@ metric_levels
 
 
         # dataset description length
-        dataset_dl = - (self.n1 * log2(self.p) + (self.n - self.n1) * log2(1-self.p))
+        dataset_dl = - (self.n1 * util.log2(self.p) + (self.n - self.n1) * util.log2(1-self.p))
         # model description length
         model_dl = 2 * np.log2(self.d)
 
@@ -237,8 +236,8 @@ class Position:
 
         # dataset description length
         dataset_dl = - (self.len_measures *
-                        sum([self.ratios[x-1]*log2(self.ratios[x-1]) +
-                             (1-self.ratios[x-1])*log2(1-self.ratios[x-1])
+                        sum([self.ratios[x-1]*util.log2(self.ratios[x-1]) +
+                             (1-self.ratios[x-1])*util.log2(1-self.ratios[x-1])
                              for x in self.levels]))
 
         # model description length
@@ -361,7 +360,7 @@ class RefinedPosition:
 
         # dataset description length
         dataset_dl = - (self.len_measures *
-                        sum([x*log2(x) + (1-x)*log2(1-x) for x in self.ratios]))
+                        sum([x*util.log2(x) + (1-x)*util.log2(1-x) for x in self.ratios]))
         # model description length
         model_dl = (self.beats_measure +1)*np.log2(self.d)
 
@@ -597,7 +596,7 @@ class Hierarchical:
         for key in self.ratios:
             for ind, e in enumerate(self.ratios[key]):
                 num_el += 1
-                dataset_dl += - self.anchors[key][ind] * (e * log2(e)  + (1-e) * log2(1-e))
+                dataset_dl += - self.anchors[key][ind] * (e * util.log2(e)  + (1-e) * util.log2(1-e))
 
         # model description length
         model_dl = (num_el + 1) * np.log2(self.d)
@@ -836,7 +835,7 @@ class RefinedHierarchical:
         for key in self.ratios:
             for ind, e in enumerate(self.ratios[key]):
                 num_el += 1
-                dataset_dl += - self.anchors[key][ind] * (e * log2(e)  + (1-e) * log2(1-e))
+                dataset_dl += - self.anchors[key][ind] * (e * util.log2(e)  + (1-e) * util.log2(1-e))
 
         # model description length
         model_dl = (num_el + 1) * np.log2(self.d)

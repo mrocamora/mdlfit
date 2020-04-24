@@ -7,11 +7,11 @@ import re
 from .version import version as __version__
 from .version import show_versions
 
-# And all the carat sub-modules
+# And all the mdlfit sub-modules
 #from ._cache import cache
 from . import dataio
 from . import models
-# from . import display
+from . import util
 
 # Exporting exception classes at the top level
 #from .util.exceptions import *  # pylint: disable=wildcard-import
