@@ -136,7 +136,7 @@ metric_levels
             print("Precision parameter d: %d. (Not indicated by user, default value.)", self.d)
         else:
             #User sets d
-            print("Precision parameter d: %d." % self.d)
+            print("Precision parameter d: %d." % self.d, " (set by user)")
         print("Description length")
         print("description length per measure (bits): %f" % self.dl)
 
@@ -266,7 +266,7 @@ class Position:
             print("Precision parameter d: %d. (Not indicated by user, default value.)", self.d)
         else:
             #User sets d
-            print("Precision parameter d: %d." % self.d)
+            print("Precision parameter d: %d." % self.d, " (set by user)")
 
         print("Description length")
         print("description length per measure (bits): %f" % self.dl)
@@ -386,7 +386,7 @@ class RefinedPosition:
             print("Precision parameter d: %d. (Not indicated by user, default value.)", self.d)
         else:
             #User sets d
-            print("Precision parameter d: %d." % self.d)
+            print("Precision parameter d: %d." % self.d, " (set by user)")
 
         print("Description length")
         print("description length per measure (bits): %f" % self.dl)
@@ -624,7 +624,7 @@ class Hierarchical:
             print("Precision parameter d: %d. (Not indicated by user, default value.)", self.d)
         else:
             #User sets d
-            print("Precision parameter d: %d." % self.d)
+            print("Precision parameter d: %d." % self.d, " (set by user)")
 
         print("Description length")
         print("Description length per measure (bits): %f" % self.dl)
@@ -863,7 +863,7 @@ class RefinedHierarchical:
             print("Precision parameter d: %d. (Not indicated by user, default value.)", self.d)
         else:
             #User sets d
-            print("Precision parameter d: %d." % self.d)
+            print("Precision parameter d: %d." % self.d, " (set by user)")
 
         print("Description length")
         print("Description length per measure (bits): %f" % self.dl)
