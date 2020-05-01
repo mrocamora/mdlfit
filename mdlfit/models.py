@@ -18,134 +18,59 @@ Defining, fitting and applying models
 
 """
 
-import warnings
 import numpy as np
 from . import util
 
-__all__ = ['Bernoulli', 'Position', 'RefinedPosition', 'Hierarchical', 'RefinedHierarchical']
+__all__ = ['Model', 'Bernoulli', 'Position', 'RefinedPosition',
+           'Hierarchical', 'RefinedHierarchical', 'createModel']
 
+def createModel(model_string, dataset, signature, beat_subdivisions, d=None):
+    """ Function to create a model of any kind.
 
-class Bernoulli:
-    """Class to represent a Bernoulli model
-metric_levels
-    Attributes
+    Parameters
     ----------
-    num_pieces : int
-        Number of pieces of the dataset
-    beats_measure : int
-        Number of beat subdivisions per measure
+    model_string : str
+        name of the model to create (Bernoulli, Position, RefinedPosition, Hirarchical,
+        RefinedHierarchical)
+    dataset : list
+        list of dictionaries, each one corresponds to a piece
+    signature : str
+        string denoting the time signature to consider.
+        Only pieces with that time signature (exclusively) will be encoded.
+    beat_subdivisions : int
+        number of (equal) subdivisions of each beat.
     d : int, optional
         Precision parameter
 
-    Methods
+    Returns
     -------
-    fit(dataset)
-        Fit model parameters from dataset
-    description_length()
-        Compute description length
-    show()
-        Show model parameters
+    model : Model
+        a model of the type specified
+
+    Examples
+    --------
+    Give some examples here, please.
 
     """
 
-    def __init__(self, dataset, d=None):
+    model = None
 
-        # number of pieces in the dataset
-        self.num_pieces = len(dataset)
+    if model_string == 'Bernoulli':
+        model = Bernoulli(dataset, signature, beat_subdivisions, d=d)
+    elif model_string == 'Position':
+        model = Position(dataset, signature, beat_subdivisions, d=d)
+    elif model_string == 'RefinedPosition':
+        model = RefinedPosition(dataset, signature, beat_subdivisions, d=d)
+    elif model_string == 'Hierarchical':
+        model = Hierarchical(dataset, signature, beat_subdivisions, d=d)
+    elif model_string == 'RefinedHierarchical':
+        model = RefinedHierarchical(dataset, signature, beat_subdivisions, d=d)
 
-        # beats subdivisions per measure
-        self.beats_measure = dataset[0]['measures'][0].shape[0]
-
-        # fit the model using dataset
-        self.fit(dataset)
-
-        # set the precision parameter d
-        if d is None:
-            self.d = np.sqrt(self.n)
-            self.default_precision = True
-        else:
-            self.d = d
-            self.default_precision = False
-
-        # compute description length
-        self.description_length()
+    return model
 
 
-    def fit(self, dataset):
-        """Fit model parameters from dataset
-        """
-
-        # number of onsets (i.e. 1s)
-        n1 = 0
-        # total number of beat position (i.e. 0s and 1s)
-        n = 0
-
-        # for each piece in the dataset
-        for piece in dataset:
-            # add total number of 0s and 1s in piece
-            n += len(piece['measures']) * self.beats_measure
-            # for each measure in piece
-            for measure in piece['measures']:
-                # add the number of 1s in measure
-                n1 += np.sum(measure)
-
-        # save number of onset (i.e. 1s)
-        self.n1 = n1
-        # save number of beat position (i.e. 0s and 1s)
-        self.n = n
-        # save proportion
-        self.p = n1/n
-        #save total number of measures
-        self.len_measures = n/self.beats_measure
-
-
-
-    def description_length(self):
-        """Compute description length
-        """
-
-        # if not default precision then compute the optimal
-        # discrete value of the parameters given the precision
-        if not self.default_precision:
-            self.p = util.optimal_value(self.d, self.p, self.n, self.n1)
-
-
-        # dataset description length
-        dataset_dl = - (self.n1 * util.log2(self.p) + (self.n - self.n1) * util.log2(1-self.p))
-        # model description length
-        model_dl = 2 * np.log2(self.d)
-
-        # total description length per measure
-        self.dl = (dataset_dl + model_dl) / self.len_measures
-
-
-    def show(self):
-        """Show model parameters
-        """
-
-        print("Bernoulli model. ")
-        print("-"*16)
-        print("Dataset Parameters")
-        print("Number of pieces: %d, number of beats per measure: %d" % (self.num_pieces,
-                                                                         self.beats_measure))
-        print("Model Parameters")
-        print("Number of 1s: %d, total number of beats: %d, proportion: %f" % (self.n1, self.n,
-                                                                               self.p))
-        if self.default_precision == True:
-            #Use default d
-            print("Precision parameter d: %d. (Not indicated by user, default value.)", self.d)
-        else:
-            #User sets d
-            print("Precision parameter d: %d." % self.d, " (set by user)")
-        print("Description length")
-        print("description length per measure (bits): %f" % self.dl)
-
-
-
-########
-class Position:
-    """Class to represent a Position model
-
+class Model:
+    """Class to represent a generic model
 
     Attributes
     ----------
@@ -153,8 +78,6 @@ class Position:
         Number of pieces of the dataset
     beats_measure : int
         Number of beat subdivisions per measure
-    levels : list
-        List containing the maximum metric level at each position
     d : int, optional
         Precision parameter
 
@@ -166,11 +89,11 @@ class Position:
         Compute description length
     show()
         Show model parameters
-
 
     """
 
     def __init__(self, dataset, signature, beat_subdivisions, d=None):
+
 
         # number of pieces in the dataset
         self.num_pieces = len(dataset)
@@ -200,21 +123,174 @@ class Position:
         """Fit model parameters from dataset
         """
 
-        # number of onsets on each metrical position
-        self.onsets = self.levels[0]*[0]
+        # total number of beat position (i.e. 0s and 1s)
         n = 0
+
+        # for each piece in the dataset
         for piece in dataset:
             # add total number of 0s and 1s in piece
             n += len(piece['measures']) * self.beats_measure
-            for k in range(self.beats_measure):
-                #sum onsets in each metrical level for all measures in piece
-                self.onsets[self.levels[k]-1] += sum([measure[k] == 1
-                                                      for measure in piece['measures']])
 
-        # save total number of beat positions (i.e. 0s and 1s)
+        # save number of beat position (i.e. 0s and 1s)
         self.n = n
         # save total number of measures
         self.len_measures = n/self.beats_measure
+
+
+    def description_length(self):
+        """Compute description length
+        """
+
+        self.dl = 0
+
+
+    def show(self):
+        """Show model parameters
+        """
+
+        print(self.__class__.__name__ + " model. ")
+        print("-"*16)
+        print("Dataset Parameters")
+        print("Number of pieces: %d, number of beats per measure: %d" % (self.num_pieces,
+                                                                         self.beats_measure))
+        print("Total number of beat positions: %d" % (self.n))
+        if self.default_precision:
+            # use default d
+            print("Precision parameter d: %d. (Not indicated by user, default value.)", self.d)
+        else:
+            # user sets d
+            print("Precision parameter d: %d." % self.d, " (set by user)")
+
+        print("Description length")
+        print("description length per measure (bits): %f" % self.dl)
+
+
+
+class Bernoulli(Model):
+    """Class to represent a Bernoulli model
+
+    Attributes
+    ----------
+    num_pieces : int
+        Number of pieces of the dataset
+    beats_measure : int
+        Number of beat subdivisions per measure
+    d : int, optional
+        Precision parameter
+
+    Methods
+    -------
+    fit(dataset)
+        Fit model parameters from dataset
+    description_length()
+        Compute description length
+    show()
+        Show model parameters
+
+    """
+
+    def __init__(self, dataset, signature, beat_subdivisions, d=None):
+        super().__init__(dataset, signature, beat_subdivisions, d=d)
+
+
+    def fit(self, dataset):
+        """Fit model parameters from dataset
+        """
+
+        super().fit(dataset)
+
+        # number of onsets (i.e. 1s)
+        n1 = 0
+
+        # for each piece in the dataset
+        for piece in dataset:
+            # for each measure in piece
+            for measure in piece['measures']:
+                # add the number of 1s in measure
+                n1 += np.sum(measure)
+
+        # save number of onset (i.e. 1s)
+        self.n1 = n1
+        # save proportion
+        self.p = n1/self.n
+
+
+
+    def description_length(self):
+        """Compute description length
+        """
+
+        # if not default precision then compute the optimal
+        # discrete value of the parameters given the precision
+        if not self.default_precision:
+            self.p = util.optimal_value(self.d, self.p, self.n, self.n1)
+
+
+        # dataset description length
+        dataset_dl = - (self.n1 * util.log2(self.p) + (self.n - self.n1) * util.log2(1-self.p))
+        # model description length
+        model_dl = 2 * np.log2(self.d)
+
+        # total description length per measure
+        self.dl = (dataset_dl + model_dl) / self.len_measures
+
+
+    def show(self):
+        """Show model parameters
+        """
+
+        super().show()
+
+        print("Model Parameters")
+        print("Number of 1s: %d, total number of beats: %d, proportion: %f" % (self.n1, self.n,
+                                                                               self.p))
+
+
+class Position(Model):
+    """Class to represent a Position model
+
+
+    Attributes
+    ----------
+    num_pieces : int
+        Number of pieces of the dataset
+    beats_measure : int
+        Number of beat subdivisions per measure
+    levels : list
+        List containing the maximum metric level at each position
+    d : int, optional
+        Precision parameter
+
+    Methods
+    -------
+    fit(dataset)
+        Fit model parameters from dataset
+    description_length()
+        Compute description length
+    show()
+        Show model parameters
+
+
+    """
+
+    def __init__(self, dataset, signature, beat_subdivisions, d=None):
+        super().__init__(dataset, signature, beat_subdivisions, d=d)
+
+
+    def fit(self, dataset):
+        """Fit model parameters from dataset
+        """
+
+        super().fit(dataset)
+
+        # number of onsets on each metrical position
+        self.onsets = self.levels[0]*[0]
+        for piece in dataset:
+            for k in range(self.beats_measure):
+                # sum onsets in each metrical level for all measures in piece
+                self.onsets[self.levels[k]-1] += sum([measure[k] == 1
+                                                      for measure in piece['measures']])
+
         # get rate instead of absolute quantity
         self.ratios = [self.onsets[i]/(self.len_measures * self.levels.count(i+1))
                        for i in range(len(self.onsets))]
@@ -251,30 +327,15 @@ class Position:
         """Show model parameters
         """
 
-        print("Position model. ")
-        print("-"*15)
-        print("Dataset Parameters")
-        print("Number of pieces: %d, number of beats per measure: %d, number of measures: %d"
-              % (self.num_pieces, self.beats_measure, self.len_measures))
-        print("Metrical levels: %s" % (str(self.levels)))
+        super().show()
+
         print("Model Parameters")
         print("Onsets per level: %s.\nTotal number of beats: %d.\nRatios: %s"
               % (str(self.onsets), self.n, str(self.ratios)))
 
-        if self.default_precision == True:
-            #Use default d
-            print("Precision parameter d: %d. (Not indicated by user, default value.)", self.d)
-        else:
-            #User sets d
-            print("Precision parameter d: %d." % self.d, " (set by user)")
-
-        print("Description length")
-        print("description length per measure (bits): %f" % self.dl)
 
 
-
-########
-class RefinedPosition:
+class RefinedPosition(Model):
     """Class to represent a Refined Position model
 
 
@@ -299,48 +360,24 @@ class RefinedPosition:
 
     """
 
-    def __init__(self, dataset, d=None):
-
-        # number of pieces in the dataset
-        self.num_pieces = len(dataset)
-
-        # beats subdivisions per measure
-        self.beats_measure = dataset[0]['measures'][0].shape[0]
-
-        # fit the model using dataset
-        self.fit(dataset)
-
-        # set the precision parameter d
-        if d is None:
-            self.d = np.sqrt(self.n)
-            self.default_precision = True
-        else:
-            self.d = d
-            self.default_precision = False
-
-        # compute description length
-        self.description_length()
+    def __init__(self, dataset, signature, beat_subdivisions, d=None):
+        super().__init__(dataset, signature, beat_subdivisions, d=d)
 
 
     def fit(self, dataset):
         """Fit model parameters from dataset
         """
 
-        #number of onsets on each metrical position
+        super().fit(dataset)
+
+        # number of onsets on each metrical position
         self.onsets = self.beats_measure*[0]
-        n = 0
         for piece in dataset:
-            # add total number of 0s and 1s in piece
-            n += len(piece['measures']) * self.beats_measure
             for k in range(self.beats_measure):
-                #sum onsets in each metrical position for all measures in piece
+                # sum onsets in each metrical position for all measures in piece
                 self.onsets[k] += sum([measure[k] == 1 for measure in piece['measures']])
 
-        #save total number of beat positions (i.e. 0s and 1s)
-        self.n = n
-        #save total number of measures
-        self.len_measures = n/self.beats_measure
-        #get rate instead of absolute quantity
+        # get rate instead of absolute quantity
         self.ratios = [i/self.len_measures for i in self.onsets]
 
 
@@ -372,28 +409,15 @@ class RefinedPosition:
         """Show model parameters
         """
 
-        print("Refined Position model. ")
-        print("-"*23)
-        print("Dataset Parameters")
-        print("Number of pieces: %d, number of beats per measure: %d, number of measures: %d"
-              % (self.num_pieces, self.beats_measure, self.len_measures))
+        super().show()
+
         print("Model Parameters")
         print("Onsets per position: %s.\nTotal number of beats: %d.\nRatios: %s"
               % (str(self.onsets), self.n, str(self.ratios)))
 
-        if self.default_precision == True:
-            #Use default d
-            print("Precision parameter d: %d. (Not indicated by user, default value.)", self.d)
-        else:
-            #User sets d
-            print("Precision parameter d: %d." % self.d, " (set by user)")
-
-        print("Description length")
-        print("description length per measure (bits): %f" % self.dl)
 
 
-########
-class Hierarchical:
+class Hierarchical(Model):
     """Class to represent a Hierarchical model
 
 
@@ -421,34 +445,14 @@ class Hierarchical:
     """
 
     def __init__(self, dataset, signature, beat_subdivisions, d=None):
-
-        # number of pieces in the dataset
-        self.num_pieces = len(dataset)
-
-        # beats subdivisions per measure
-        self.beats_measure = dataset[0]['measures'][0].shape[0]
-
-        # determine the metric levels
-        self.levels = util.metric_levels(signature, beat_subdivisions)
-
-        # fit the model using dataset
-        self.fit(dataset)
-
-        # set the precision parameter d
-        if d is None:
-            self.d = np.sqrt(self.n)
-            self.default_precision = True
-        else:
-            self.d = d
-            self.default_precision = False
-
-        # compute description length
-        self.description_length()
+        super().__init__(dataset, signature, beat_subdivisions, d=d)
 
 
     def fit(self, dataset):
         """Fit model parameters from dataset
         """
+
+        super().fit(dataset)
 
         # number of onsets of each anchor type, and downbeat
         self.onsets = {'pre': (self.levels[0] -1)*[0],
@@ -480,10 +484,7 @@ class Hierarchical:
                 ind_next = ind + ind_dist[0][0]
                 neighbours[ind] = [ind_back, ind_next]
 
-        n = 0
         for piece in dataset:
-            # add total number of 0s and 1s in piece
-            n += len(piece['measures']) * self.beats_measure
             # for each measure in piece
             for ind_m in range(len(piece['measures'])):
                 # current measure
@@ -534,10 +535,6 @@ class Hierarchical:
                             self.onsets['pos'][self.levels[pos]-1] += 1
 
 
-        # save total number of beat positions (i.e. 0s and 1s)
-        self.n = n
-        # save total number of measures
-        self.len_measures = n/self.beats_measure
         # get rates instead of absolute quantity
         # inicialization
         self.ratios = {'pre': (self.levels[0] -1)*[0],
@@ -596,7 +593,8 @@ class Hierarchical:
         for key in self.ratios:
             for ind, e in enumerate(self.ratios[key]):
                 num_el += 1
-                dataset_dl += - self.anchors[key][ind] * (e * util.log2(e)  + (1-e) * util.log2(1-e))
+                dataset_dl += - self.anchors[key][ind] * (e * util.log2(e) +
+                                                          (1-e) * util.log2(1-e))
 
         # model description length
         model_dl = (num_el + 1) * np.log2(self.d)
@@ -609,30 +607,16 @@ class Hierarchical:
         """Show model parameters
         """
 
-        print("Hierarchical model. ")
-        print("-"*19)
-        print("Dataset Parameters")
-        print("Number of pieces: %d, number of beats per measure: %d, number of measures: %d"
-              % (self.num_pieces, self.beats_measure, self.len_measures))
-        print("Metrical levels: %s" % (str(self.levels)))
+        super().show()
+
         print("Model Parameters")
-        print("Locations per anchor type and level: %s.\nOnsets per anchor type and level: %s.\nRatios per anchor type and level: %s"
+        print("Locations per anchor type and level: %s.\nOnsets per anchor type and"\
+              "level: %s.\nRatios per anchor type and level: %s"
               % (str(self.anchors), str(self.onsets), str(self.ratios)))
 
-        if self.default_precision == True:
-            #Use default d
-            print("Precision parameter d: %d. (Not indicated by user, default value.)", self.d)
-        else:
-            #User sets d
-            print("Precision parameter d: %d." % self.d, " (set by user)")
-
-        print("Description length")
-        print("Description length per measure (bits): %f" % self.dl)
 
 
-
-########
-class RefinedHierarchical:
+class RefinedHierarchical(Model):
     """Class to represent a Refined Hierarchical model
 
 
@@ -660,34 +644,14 @@ class RefinedHierarchical:
     """
 
     def __init__(self, dataset, signature, beat_subdivisions, d=None):
-
-        # number of pieces in the dataset
-        self.num_pieces = len(dataset)
-
-        # beats subdivisions per measure
-        self.beats_measure = dataset[0]['measures'][0].shape[0]
-
-        # determine the metric levels
-        self.levels = util.metric_levels(signature, beat_subdivisions)
-
-        # fit the model using dataset
-        self.fit(dataset)
-
-        # set the precision parameter d
-        if d is None:
-            self.d = np.sqrt(self.n)
-            self.default_precision = True
-        else:
-            self.d = d
-            self.default_precision = False
-
-        # compute description length
-        self.description_length()
+        super().__init__(dataset, signature, beat_subdivisions, d=d)
 
 
     def fit(self, dataset):
         """Fit model parameters from dataset
         """
+
+        super().fit(dataset)
 
         # number of onsets of each anchor type, and downbeat
         self.onsets = {'pre': (self.beats_measure -1)*[0],
@@ -719,10 +683,7 @@ class RefinedHierarchical:
                 ind_next = ind + ind_dist[0][0]
                 neighbours[ind] = [ind_back, ind_next]
 
-        n = 0
         for piece in dataset:
-            # add total number of 0s and 1s in piece
-            n += len(piece['measures']) * self.beats_measure
             # for each measure in piece
             for ind_m in range(len(piece['measures'])):
                 # current measure
@@ -772,11 +733,6 @@ class RefinedHierarchical:
                         if is_onset:
                             self.onsets['pos'][pos - 1] += 1
 
-
-        # save total number of beat positions (i.e. 0s and 1s)
-        self.n = n
-        # save total number of measures
-        self.len_measures = n/self.beats_measure
         # get rates instead of absolute quantity
         # inicialization
         self.ratios = {'pre': (self.beats_measure -1)*[0],
@@ -835,7 +791,8 @@ class RefinedHierarchical:
         for key in self.ratios:
             for ind, e in enumerate(self.ratios[key]):
                 num_el += 1
-                dataset_dl += - self.anchors[key][ind] * (e * util.log2(e)  + (1-e) * util.log2(1-e))
+                dataset_dl += - self.anchors[key][ind] * (e * util.log2(e) +
+                                                          (1-e) * util.log2(1-e))
 
         # model description length
         model_dl = (num_el + 1) * np.log2(self.d)
@@ -848,22 +805,9 @@ class RefinedHierarchical:
         """Show model parameters
         """
 
-        print("Refined Hierarchical model. ")
-        print("-"*27)
-        print("Dataset Parameters")
-        print("Number of pieces: %d, number of beats per measure: %d, number of measures: %d"
-              % (self.num_pieces, self.beats_measure, self.len_measures))
-        print("Metrical levels: %s" % (str(self.levels)))
+        super().show()
+
         print("Model Parameters")
-        print("Locations per anchor type and position: %s.\nOnsets per anchor type and position: %s.\nRatios per anchor type and position: %s"
+        print("Locations per anchor type and position: %s.\nOnsets per anchor type"\
+              " and position: %s.\nRatios per anchor type and position: %s"
               % (str(self.anchors), str(self.onsets), str(self.ratios)))
-
-        if self.default_precision == True:
-            #Use default d
-            print("Precision parameter d: %d. (Not indicated by user, default value.)", self.d)
-        else:
-            #User sets d
-            print("Precision parameter d: %d." % self.d, " (set by user)")
-
-        print("Description length")
-        print("Description length per measure (bits): %f" % self.dl)

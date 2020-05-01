@@ -18,11 +18,12 @@ Load encoded dataset from a pickle file
 
 import sys
 import argparse
-import mdlfit as mf
+from mdlfit.dataio import load_encoded_dataset
 
-def fit_all_models(dataset_string, signature='4/4', beat_subdivisions=2,
-                   data_folder='../data/encoded/', precision=None):
-    """Fit all models for the given dataset.
+
+def load_encoded_dataset_from_pkl(dataset_string, signature='4/4', beat_subdivisions=2,
+                                  data_folder='../data/encoded/'):
+    """Load and encode a symbolic music dataset from the files in a given directory.
 
     Parameters
     ----------
@@ -36,10 +37,11 @@ def fit_all_models(dataset_string, signature='4/4', beat_subdivisions=2,
         number of (equal) subdivisions of each beat.
     data_folder : str
         name of the folder containing the data, i.e. the pickle files
-    precision: float
-        precision value used for coding (default sqrt(n)
-        with n total number of beat positions)
 
+    Returns
+    -------
+    dataset : list
+        list of dictionaries, each one corresponds to a piece
     """
 
     # strings for the signature and beat_subdivision
@@ -48,25 +50,25 @@ def fit_all_models(dataset_string, signature='4/4', beat_subdivisions=2,
     dataset_filename = dataset_string + "_" + signature_subdivisions + ".pkl"
 
     # load encoded the dataset
-    dataset = mf.dataio.load_encoded_dataset(data_folder + dataset_filename)
+    dataset = load_encoded_dataset(data_folder + dataset_filename)
 
-    # model names
-    model_names = ['Bernoulli', 'Position', 'RefinedPosition',
-                   'Hierarchical', 'RefinedHierarchical']
+    # show some information about the encoded dataset
+    print(__doc__)
+    print('-'*80)
+    print('Corpus name (from directory name): ', dataset_string)
+    print('Time signature: ', signature)
+    print('Beat subdivisions: ', beat_subdivisions)
+    print('Number of encoded pieces: ', len(dataset))
+    print('-'*80)
 
-    # models
-    models = []
+    # number of elements to show
+    N = min(10, len(dataset))
+    print('Show some information for the first ' + str(N) + ' elements of the dataset:')
 
-    for name in model_names:
-        # create model
-        model = mf.models.createModel(name, dataset, signature, beat_subdivisions, d=precision)
-        # save model
-        models.append(model)
-
-    for model in models:
-        print('='*50)
-        # show model
-        model.show()
+    for ind in range(N):
+        print('Index: ' +  str(dataset[ind]["ind_piece"]) +
+              ' Number of measures: '  + str(len(dataset[ind]["measures"])) +
+              ' Title: ' + dataset[ind]["title"])
 
 
 def process_arguments(args):
@@ -87,10 +89,6 @@ def process_arguments(args):
     parser.add_argument('-d', '--data_folder',
                         help='name of the folder containing the data, i.e. the pickle files',
                         default='../data/encoded/', action='store')
-    parser.add_argument('-p', '--precision',
-                        help='precision value used for coding (default sqrt(n) with n total number'\
-                        ' of beat positions)',
-                        default=None, type=int, action='store')
 
     return vars(parser.parse_args(args))
 
@@ -99,9 +97,8 @@ if __name__ == '__main__':
     # get the parameters
     parameters = process_arguments(sys.argv[1:])
 
-    # fit all the models for the given dataset
-    fit_all_models(parameters['dataset_string'],
-                   parameters['signature'],
-                   parameters['beat_subdivisions'],
-                   parameters['data_folder'],
-                   parameters['precision'])
+    # load the dataset from a pickle file
+    load_encoded_dataset_from_pkl(parameters['dataset_string'],
+                                  parameters['signature'],
+                                  parameters['beat_subdivisions'],
+                                  parameters['data_folder'])
