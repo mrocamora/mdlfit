@@ -170,7 +170,8 @@ def optimal_value(d, val, n, n1):
         d_val = val
     else:
         # grid of parameter values
-        grid = np.arange(0, 1, 1/d)
+        # grid = np.arange(0, 1, 1/d)
+        grid = np.linspace(0, 1, num=d+1)
         # find the indexes of the nearest values in the grid
         idx1, idx2 = find_nearest_values(grid, val)
         # nearest values in the grid

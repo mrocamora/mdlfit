@@ -64,10 +64,13 @@ def fit_all_models(dataset_string, signature='4/4', beat_subdivisions=2,
         models.append(model)
 
     for model in models:
-        print('='*50)
+        colwidth = 80
+        print('='*colwidth)
         # show model
-        model.show()
+        # model.show()
+        model.show(colwidth=colwidth)
 
+    print('='*colwidth)
 
 def process_arguments(args):
     '''Argparse function to get the program parameters'''

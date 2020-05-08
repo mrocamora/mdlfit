@@ -98,6 +98,9 @@ class Model:
         # number of pieces in the dataset
         self.num_pieces = len(dataset)
 
+        # name of the dataset
+        self.dataset_name = dataset[0]['dataset']
+
         # beats subdivisions per measure
         self.beats_measure = dataset[0]['measures'][0].shape[0]
 
@@ -144,25 +147,43 @@ class Model:
         self.dl = 0
 
 
-    def show(self):
+    def show(self, colwidth=50):
         """Show model parameters
         """
+        # model name
+        model_name = self.__class__.__name__ + " model"
 
-        print(self.__class__.__name__ + " model. ")
-        print("-"*16)
-        print("Dataset Parameters")
-        print("Number of pieces: %d, number of beats per measure: %d" % (self.num_pieces,
-                                                                         self.beats_measure))
-        print("Total number of beat positions: %d" % (self.n))
+        print(model_name.center(colwidth))
+        print()
+        print("Dataset".center(colwidth))
+        print()
+        print("Dataset name: ".ljust(colwidth - len(self.dataset_name)) + self.dataset_name)
+        print("Number of pieces: ".ljust(colwidth - len(str(self.num_pieces))) +
+              str(self.num_pieces))
+        print("Number of beats per measure: ".ljust(colwidth - len(str(self.beats_measure))) +
+              str(self.beats_measure))
+        print("Total number of beat positions: ".ljust(colwidth - len(str(self.n))) +
+              str(self.n))
+
+        print()
+        print("Description length".center(colwidth))
+        print()
         if self.default_precision:
             # use default d
-            print("Precision parameter d: %d. (Not indicated by user, default value.)", self.d)
+            print("Precision parameter d (default value): ".ljust(colwidth -
+                                                                  len("{:d}".format(self.d))) +
+                  "{:d}".format(self.d))
+            #print("Precision parameter d: %d (Not indicated by user, default value.).", self.d)
         else:
             # user sets d
-            print("Precision parameter d: %d." % self.d, " (set by user)")
-
-        print("Description length")
-        print("description length per measure (bits): %f" % self.dl)
+            print("Precision parameter d (set by user): ".ljust(colwidth -
+                                                                len("{:d}".format(self.d))) +
+                  "{:d}".format(self.d))
+            # print("Precision parameter d: %d" % self.d, " (set by user).")
+        print("Description length per measure (bits): ".ljust(colwidth -
+                                                              len("{:4.6f}".format(self.dl))) +
+              "{:4.6f}".format(self.dl))
+        print()
 
 
 
@@ -235,15 +256,18 @@ class Bernoulli(Model):
         self.dl = (dataset_dl + model_dl) / self.len_measures
 
 
-    def show(self):
+    def show(self, colwidth=50):
         """Show model parameters
         """
 
-        super().show()
+        super().show(colwidth=colwidth)
 
-        print("Model Parameters")
-        print("Number of 1s: %d, total number of beats: %d, proportion: %f" % (self.n1, self.n,
-                                                                               self.p))
+        print("Model parameters".center(colwidth))
+        print()
+        print("Total number of 1s: ".ljust(colwidth - len("{:d}".format(self.n1))) +
+              "{:d}".format(self.n1))
+        print("Proportion of 1s: ".ljust(colwidth - len("{:4.6f}".format(self.p))) +
+              "{:4.6f}".format(self.p))
 
 
 class Position(Model):
@@ -323,15 +347,18 @@ class Position(Model):
         self.dl = (dataset_dl + model_dl) / self.len_measures
 
 
-    def show(self):
+    def show(self, colwidth=50):
         """Show model parameters
         """
 
-        super().show()
+        super().show(colwidth=colwidth)
 
-        print("Model Parameters")
-        print("Onsets per level: %s.\nTotal number of beats: %d.\nRatios: %s"
-              % (str(self.onsets), self.n, str(self.ratios)))
+        print("Model parameters".center(colwidth))
+        print()
+        print("Onsets per level: ".ljust(colwidth))
+        print((str(self.onsets)).rjust(colwidth))
+        print("Onset ratios: ".ljust(colwidth))
+        print((str(self.ratios)).rjust(colwidth))
 
 
 
@@ -405,15 +432,18 @@ class RefinedPosition(Model):
         self.dl = (dataset_dl + model_dl) / self.len_measures
 
 
-    def show(self):
+    def show(self, colwidth=80):
         """Show model parameters
         """
 
-        super().show()
+        super().show(colwidth=colwidth)
 
-        print("Model Parameters")
-        print("Onsets per position: %s.\nTotal number of beats: %d.\nRatios: %s"
-              % (str(self.onsets), self.n, str(self.ratios)))
+        print("Model parameters".center(colwidth))
+        print()
+        print("Onsets per position: ".ljust(colwidth))
+        print((str(self.onsets)).rjust(colwidth))
+        print("Onset ratios: ".ljust(colwidth))
+        print((str(self.ratios)).rjust(colwidth))
 
 
 
@@ -603,16 +633,24 @@ class Hierarchical(Model):
         self.dl = (dataset_dl + model_dl) / self.len_measures
 
 
-    def show(self):
+    def show(self, colwidth=80):
         """Show model parameters
         """
 
-        super().show()
+        super().show(colwidth=colwidth)
 
-        print("Model Parameters")
-        print("Locations per anchor type and level: %s.\nOnsets per anchor type and"\
-              "level: %s.\nRatios per anchor type and level: %s"
-              % (str(self.anchors), str(self.onsets), str(self.ratios)))
+        print("Model parameters".center(colwidth))
+        print()
+        print("Locations per anchor type and level: ".ljust(colwidth))
+        for k, v in self.anchors.items():
+            print((str(v) + ": " + "{:3s}".format(str(k))).rjust(colwidth))
+        print("Onsets per anchor type and level: ".ljust(colwidth))
+        for k, v in self.onsets.items():
+            print((str(v) + ": " + "{:3s}".format(str(k))).rjust(colwidth))
+        print("Ratios per anchor type and level: ".ljust(colwidth))
+        for k, v in self.ratios.items():
+            print((str(v) + ": " + "{:3s}".format(str(k))).rjust(colwidth))
+
 
 
 
@@ -801,13 +839,20 @@ class RefinedHierarchical(Model):
         self.dl = (dataset_dl + model_dl) / self.len_measures
 
 
-    def show(self):
+    def show(self, colwidth=80):
         """Show model parameters
         """
 
-        super().show()
+        super().show(colwidth=colwidth)
 
-        print("Model Parameters")
-        print("Locations per anchor type and position: %s.\nOnsets per anchor type"\
-              " and position: %s.\nRatios per anchor type and position: %s"
-              % (str(self.anchors), str(self.onsets), str(self.ratios)))
+        print("Model parameters".center(colwidth))
+        print()
+        print("Locations per anchor type and level: ".ljust(colwidth))
+        for k, v in self.anchors.items():
+            print((str(v) + ": " + "{:3s}".format(str(k))).rjust(colwidth))
+        print("Onsets per anchor type and level: ".ljust(colwidth))
+        for k, v in self.onsets.items():
+            print((str(v) + ": " + "{:3s}".format(str(k))).rjust(colwidth))
+        print("Ratios per anchor type and level: ".ljust(colwidth))
+        for k, v in self.ratios.items():
+            print((str(v) + ": " + "{:3s}".format(str(k))).rjust(colwidth))
