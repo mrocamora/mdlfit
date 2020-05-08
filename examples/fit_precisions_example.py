@@ -78,7 +78,6 @@ def fit_all_precisions(dataset_string, model_name, signature='4/4', beat_subdivi
     print('Description lengths: %s. \n Optimal precision: %d.\n Minimum description length: %d', str(description_lengths), optimal_precision, mdl )
 
 
-############## AJUSTAR ESTO
 def process_arguments(args):
     '''Argparse function to get the program parameters'''
 
@@ -88,6 +87,11 @@ def process_arguments(args):
                         action='store',
                         help='the name of the dataset as used in the encoding, for instance, as'\
                         ' defined in music21 (e.g. airdsAirs, oneills1850, EssenFolksong)')
+    parser.add_argument('model_name',
+    					action = 'store',
+    					help = 'name of the model to use'\
+    					'(options: Bernoulli, Position, RefinedPosition, Hierarchical, RefinedHierarchical)'
+    					)
     parser.add_argument('-s', '--signature',
                         help='string denoting the time signature (e.g. 4/4, 2/4)',
                         default='4/4', type=str, action='store')
@@ -97,10 +101,9 @@ def process_arguments(args):
     parser.add_argument('-d', '--data_folder',
                         help='name of the folder containing the data, i.e. the pickle files',
                         default='../data/encoded/', action='store')
-    parser.add_argument('-p', '--precision',
-                        help='precision value used for coding (default sqrt(n) with n total number'\
-                        ' of beat positions)',
-                        default=None, type=int, action='store')
+    parser.add_argument('-p', '--precision_range',
+                        help='precision values used for coding (default [2^3, 2^4, ..., 2^10])',
+                        default=[2**k for k in range(3,10)], type=list, action='store')
 
     return vars(parser.parse_args(args))
 
@@ -110,8 +113,9 @@ if __name__ == '__main__':
     parameters = process_arguments(sys.argv[1:])
 
     # fit all the models for the given dataset
-    fit_all_models(parameters['dataset_string'],
+    fit_all_precisions(parameters['dataset_string'],
+    			   paramters('model_name')
                    parameters['signature'],
                    parameters['beat_subdivisions'],
                    parameters['data_folder'],
-                   parameters['precision'])
+                   parameters['precision_range'])
