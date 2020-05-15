@@ -12,7 +12,7 @@
  music encodind using minimum description length
 
 
-Load encoded dataset from a pickle file
+Fit all the models for the given dataset.
 
 '''
 
