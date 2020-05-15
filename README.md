@@ -25,7 +25,7 @@ Demonstration notebooks
 -----------------------
 Some demonstrations of what you can do with mdlfit:
 
-* [Minimum description length demo notebook](http://nbviewer.ipython.org/github/mrocamora/carat/blob/master/examples/carat_rhythmic_patterns_demo.ipynb): how to compute minimum description length for different models and datasets.
+* [Minimum description length demo notebook](https://gitlab.fing.edu.uy/rocamora/mdlfit/blob/master/examples/mdlfit-fit_all_models.ipynb): how to compute minimum description length for different models and datasets.
 
 Citing
 ------
