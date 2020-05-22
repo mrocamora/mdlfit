@@ -56,7 +56,7 @@ def encode_dataset_from_string(dataset_string, signature='4/4', beat_subdivision
     # show some information about the encoded dataset
     print(__doc__)
     print('-'*80)
-    print('Corpus name (from directory name): ', dataset_string)
+    print('Corpus name (from directory name): ', dataset[0]['dataset'])
     print('Time signature: ', signature)
     print('Beat subdivisions: ', beat_subdivisions)
     print('Number of encoded pieces: ', len(dataset))

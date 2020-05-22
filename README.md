@@ -25,6 +25,7 @@ Demonstration notebooks
 -----------------------
 Some demonstrations of what you can do with mdlfit:
 
+* [Music encoding demo notebook](https://gitlab.fing.edu.uy/rocamora/mdlfit/blob/master/examples/mdlfit-encode_music_datasets.ipynb): how to encode a dataset from music xml files and from a dataset provided by music21.
 * [Minimum description length demo notebook](https://gitlab.fing.edu.uy/rocamora/mdlfit/blob/master/examples/mdlfit-fit_all_models.ipynb): how to compute minimum description length for different models and datasets.
 
 Citing
