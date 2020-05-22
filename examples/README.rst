@@ -4,6 +4,8 @@ mdlfit examples
 
 Here is the list of examples of the functionality of mdlfit.
 
+Command-line scripts
+====================
 
 `/examples/encode_dataset_from_directory.py <encode_dataset_from_directory.py>`_
   encode a dataset from a directory containing music xml files.
@@ -23,8 +25,10 @@ Here is the list of examples of the functionality of mdlfit.
 Jupyter Notebooks
 =================
 
-* [Music encoding demo notebook](https://gitlab.fing.edu.uy/rocamora/mdlfit/blob/master/examples/mdlfit-encode_music_datasets.ipynb): how to encode a dataset from music xml files and from a dataset provided by music21.
-* [Minimum description length demo notebook](https://gitlab.fing.edu.uy/rocamora/mdlfit/blob/master/examples/mdlfit-fit_all_models.ipynb): how to compute minimum description length for different models and datasets.
+`examples/mdlfit-encode_music_datasets.ipynb <examples/mdlfit-encode_music_datasets.ipynb>`_
+ how to encode a dataset from music xml files and from a dataset provided by music21
+`examples/mdlfit-fit_all_models.ipynb <examples/mdlfit-fit_all_models.ipynb>`_ 
+ how to compute minimum description length for different models and datasets.
 
 
 .. _music21: https://web.mit.edu/music21/
