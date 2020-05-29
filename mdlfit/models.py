@@ -30,7 +30,7 @@ def createModel(model_string, dataset, signature, beat_subdivisions, d=None):
     Parameters
     ----------
     model_string : str
-        name of the model to create (Bernoulli, Position, RefinedPosition, Hirarchical,
+        name of the model to create (Bernoulli, Position, RefinedPosition, Hierarchical,
         RefinedHierarchical)
     dataset : list
         list of dictionaries, each one corresponds to a piece
@@ -124,6 +124,11 @@ class Model:
 
     def fit(self, dataset):
         """Fit model parameters from dataset
+        
+        Parameters
+        ----------
+        dataset : list of dictionaries
+            list containing the encoded pieces from the dataset to fit
         """
 
         # total number of beat position (i.e. 0s and 1s)
@@ -216,6 +221,11 @@ class Bernoulli(Model):
 
     def fit(self, dataset):
         """Fit model parameters from dataset
+        
+        Parameters
+        ----------
+        dataset : list of dictionaries
+            list containing the encoded pieces from the dataset to fit
         """
 
         super().fit(dataset)
@@ -303,6 +313,12 @@ class Position(Model):
 
     def fit(self, dataset):
         """Fit model parameters from dataset
+
+        Parameters
+        ----------
+        dataset : list of dictionaries
+            list containing the encoded pieces from the dataset to fit
+        
         """
 
         super().fit(dataset)
@@ -393,6 +409,12 @@ class RefinedPosition(Model):
 
     def fit(self, dataset):
         """Fit model parameters from dataset
+        
+        Parameters
+        ----------
+        dataset : list of dictionaries
+            list containing the encoded pieces from the dataset to fit
+        
         """
 
         super().fit(dataset)
@@ -480,6 +502,12 @@ class Hierarchical(Model):
 
     def fit(self, dataset):
         """Fit model parameters from dataset
+
+        Parameters
+        ----------
+        dataset : list of dictionaries
+            list containing the encoded pieces from the dataset to fit
+        
         """
 
         super().fit(dataset)
@@ -687,6 +715,12 @@ class RefinedHierarchical(Model):
 
     def fit(self, dataset):
         """Fit model parameters from dataset
+        
+        Parameters
+        ----------
+        dataset : list of dictionaries
+            list containing the encoded pieces from the dataset to fit
+        
         """
 
         super().fit(dataset)
