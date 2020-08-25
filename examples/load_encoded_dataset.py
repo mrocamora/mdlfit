@@ -59,6 +59,8 @@ def load_encoded_dataset_from_pkl(dataset_string, signature='4/4', beat_subdivis
     print('Time signature: ', signature)
     print('Beat subdivisions: ', beat_subdivisions)
     print('Number of encoded pieces: ', len(dataset))
+    print('Total number of measures: ', sum([len(dataset[indi]["measures"]) for indi in range(len(dataset)) ]))
+
     print('-'*80)
 
     # number of elements to show
