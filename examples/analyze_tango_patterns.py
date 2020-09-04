@@ -25,8 +25,11 @@ from mdlfit.dataio import load_encoded_dataset
 dataset = load_encoded_dataset('../data/encoded/' + 'tango_songbook_44_2.pkl')
 
 #find measures [1,1,1,1,1,0,0,0] and [1,0,0,0,1,1,1,1]
-ref1 = [1,1,1,1,1,1,0,1]
-ref2 = [1,1,0,1,1,1,1,1]
+#ref1 = [1,1,1,1,1,1,0,1]
+#ref2 = [1,1,0,1,1,1,1,1]
+ref1 = [1,0,1,0,1,0,0,0]
+ref2 = [1,0,0,0,1,0,1,0]
+
 
 count1 = 0
 count2 = 0
@@ -38,6 +41,7 @@ for i in range(len(dataset)):
 		elif sum(measure == ref2) == 8:
 			count2 += 1
 
-print("Cantidad de patrones [1,1,1,1,1,1,0,1]: ", count1 )
-print("Cantidad de patrones [1,1,0,1,1,1,1,1]: ", count2 )
+print("Cantidad de patrones:")  
+print(ref1, count1)
+print(ref2, count2)
 
