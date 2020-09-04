@@ -34,7 +34,7 @@ def fit_all_precisions(dataset_string, model_name, signature='4/4', beat_subdivi
         (e.g. 'airdsAirs', 'oneills1850', 'EssenFolksong')
     model_name : str
         name of the model to use
-        (options: 'Bernoulli', 'Position', 'RefinedPosition','Hierarchical', 'RefinedHierarchical')
+        (options: 'Bernoulli', 'Position', 'RefinedPosition', 'Hierarchical', 'RefinedHierarchical')
     signature : str
         string denoting the time signature (e.g. 4/4, 2/4).
         Only pieces with that time signature (exclusively) will be encoded.
@@ -126,7 +126,7 @@ def process_arguments(args):
     parser.add_argument('model_name',
                         action='store',
                         help='name of the model to use'\
-                        '(options: Bernoulli, Position, RefinedPosition, Hierarchical,'\
+                        '(options: Bernoulli, Position, RefinedPosition, Hierarchical, '\
                         'RefinedHierarchical)')
     parser.add_argument('-s', '--signature',
                         help='string denoting the time signature (e.g. 4/4, 2/4)',
