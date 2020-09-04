@@ -37,3 +37,7 @@ for i in range(len(dataset)):
 			count1 += 1
 		elif sum(measure == ref2) == 8:
 			count2 += 1
+
+print("Cantidad de patrones [1,1,1,1,1,1,0,1]: ", count1 )
+print("Cantidad de patrones [1,1,0,1,1,1,1,1]: ", count2 )
+
