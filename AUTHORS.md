@@ -1,7 +1,7 @@
 Contributors
 ============
 
-* Verónica Rumbo <https://github.com/verorumbo>
-* Martín Rocamora <https://github.com/mrocamora>
+* author one 
+* author two
 
 Additional thanks to .
